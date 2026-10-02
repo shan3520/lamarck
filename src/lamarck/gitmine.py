@@ -46,7 +46,7 @@ def is_test_file(path: str, globs: tuple[str, ...] = DEFAULT_TEST_GLOBS) -> bool
 
 @dataclass
 class MineConfig:
-    test_cmd: str = "python -m pytest -q {tests}"
+    test_cmd: str = "{python} -m pytest -q {tests}"
     max_commits: int = 300
     max_tasks: int = 60
     heldout_fraction: float = 0.3

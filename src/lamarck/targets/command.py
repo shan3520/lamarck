@@ -11,7 +11,7 @@ For each rollout:
 The snapshot has no git history on purpose: in a worktree the agent could run
 `git show <fix commit>` and copy the answer.
 
-The agent command is a template. Placeholders: {prompt_file}, {workdir}.
+The agent command is a template. Placeholders: {prompt_file}, {workdir}, {python} (the running interpreter, quoted).
 Example: claude -p "$(cat {prompt_file})" --permission-mode acceptEdits
 Agents can run arbitrary commands: use a sandboxed machine or container for untrusted repositories.
 
@@ -32,7 +32,7 @@ from pathlib import Path
 
 from ..evaluate import FatalRunError
 from ..harness import Harness
-from ..tasks import Task, plain_env, verify
+from ..tasks import Task, expand_python, plain_env, verify
 from .base import Trial
 
 QUOTA_EXIT_CODE = 75
@@ -81,8 +81,8 @@ class CommandTarget:
             wd = materialize(meta["repo"], meta["base"], tmp / "wd", meta["commit"], meta.get("test_files", []))
             (wd / self.harness_file).write_text(harness.render(), encoding="utf-8")
             prompt_file = tmp / "prompt.md"
-            prompt_file.write_text(task.prompt, encoding="utf-8")
-            cmd = self.agent_cmd.format(prompt_file=prompt_file.as_posix(), workdir=wd.as_posix())
+            prompt_file.write_text(expand_python(task.prompt), encoding="utf-8")
+            cmd = expand_python(self.agent_cmd).format(prompt_file=prompt_file.as_posix(), workdir=wd.as_posix())
             code = None
             try:
                 proc = subprocess.run(cmd, shell=True, cwd=wd, capture_output=True, text=True, encoding="utf-8", errors="replace",

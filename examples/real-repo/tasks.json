@@ -2,10 +2,10 @@
   "tasks": [
     {
       "id": "git-7f4dcf83a0",
-      "prompt": "access sha1 lazily\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): tests/test_itsdangerous/test_serializer.py\nRun them with: \"python\" -m pytest -q -p no:cacheprovider -o pythonpath=src tests/test_itsdangerous/test_serializer.py",
+      "prompt": "access sha1 lazily\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): tests/test_itsdangerous/test_serializer.py\nRun them with: {python} -m pytest -q -p no:cacheprovider -o pythonpath=src tests/test_itsdangerous/test_serializer.py",
       "verifier": {
         "type": "command",
-        "cmd": "\"python\" -m pytest -q -p no:cacheprovider -o pythonpath=src tests/test_itsdangerous/test_serializer.py"
+        "cmd": "{python} -m pytest -q -p no:cacheprovider -o pythonpath=src tests/test_itsdangerous/test_serializer.py"
       },
       "split": "heldout",
       "tags": [
@@ -13,7 +13,7 @@
         "itsdangerous"
       ],
       "meta": {
-        "repo": "repos\\itsdangerous",
+        "repo": "repos/itsdangerous",
         "base": "93ae366874bbd4f69d90495c45b2cd336387496c",
         "commit": "7f4dcf83a07bb3d53f4e0e65ef1b43327b4cca90",
         "test_files": [
@@ -27,10 +27,10 @@
     },
     {
       "id": "git-177196d3a5",
-      "prompt": "catch OSError on Windows\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): tests/test_itsdangerous/test_timed.py\nRun them with: \"python\" -m pytest -q -p no:cacheprovider -o pythonpath=src tests/test_itsdangerous/test_timed.py",
+      "prompt": "catch OSError on Windows\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): tests/test_itsdangerous/test_timed.py\nRun them with: {python} -m pytest -q -p no:cacheprovider -o pythonpath=src tests/test_itsdangerous/test_timed.py",
       "verifier": {
         "type": "command",
-        "cmd": "\"python\" -m pytest -q -p no:cacheprovider -o pythonpath=src tests/test_itsdangerous/test_timed.py"
+        "cmd": "{python} -m pytest -q -p no:cacheprovider -o pythonpath=src tests/test_itsdangerous/test_timed.py"
       },
       "split": "train",
       "tags": [
@@ -38,7 +38,7 @@
         "itsdangerous"
       ],
       "meta": {
-        "repo": "repos\\itsdangerous",
+        "repo": "repos/itsdangerous",
         "base": "37f09970fa32a330a6660ded3abdb264086531b5",
         "commit": "177196d3a5c7ad37b8ccbd0f88445aced07f1ca0",
         "test_files": [
@@ -51,10 +51,10 @@
     },
     {
       "id": "git-526b1ea029",
-      "prompt": "date_signed is datetime not int\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): tests/test_itsdangerous/test_timed.py\nRun them with: \"python\" -m pytest -q -p no:cacheprovider -o pythonpath=src tests/test_itsdangerous/test_timed.py",
+      "prompt": "date_signed is datetime not int\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): tests/test_itsdangerous/test_timed.py\nRun them with: {python} -m pytest -q -p no:cacheprovider -o pythonpath=src tests/test_itsdangerous/test_timed.py",
       "verifier": {
         "type": "command",
-        "cmd": "\"python\" -m pytest -q -p no:cacheprovider -o pythonpath=src tests/test_itsdangerous/test_timed.py"
+        "cmd": "{python} -m pytest -q -p no:cacheprovider -o pythonpath=src tests/test_itsdangerous/test_timed.py"
       },
       "split": "train",
       "tags": [
@@ -62,7 +62,7 @@
         "itsdangerous"
       ],
       "meta": {
-        "repo": "repos\\itsdangerous",
+        "repo": "repos/itsdangerous",
         "base": "b11475aa0e1534f1fe7736d56140d81e872b1f5f",
         "commit": "526b1ea02934f529606dcbf3c3340ab429dcde04",
         "test_files": [
@@ -76,10 +76,10 @@
     },
     {
       "id": "git-53f34c9a8f",
-      "prompt": "deprecate jws\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): tests/test_itsdangerous/test_jws.py\nRun them with: \"python\" -m pytest -q -p no:cacheprovider -o pythonpath=src tests/test_itsdangerous/test_jws.py",
+      "prompt": "deprecate jws\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): tests/test_itsdangerous/test_jws.py\nRun them with: {python} -m pytest -q -p no:cacheprovider -o pythonpath=src tests/test_itsdangerous/test_jws.py",
       "verifier": {
         "type": "command",
-        "cmd": "\"python\" -m pytest -q -p no:cacheprovider -o pythonpath=src tests/test_itsdangerous/test_jws.py"
+        "cmd": "{python} -m pytest -q -p no:cacheprovider -o pythonpath=src tests/test_itsdangerous/test_jws.py"
       },
       "split": "heldout",
       "tags": [
@@ -87,7 +87,7 @@
         "itsdangerous"
       ],
       "meta": {
-        "repo": "repos\\itsdangerous",
+        "repo": "repos/itsdangerous",
         "base": "981ade6e73ff9ce420aa29143039de0aaccb9770",
         "commit": "53f34c9a8fed28aa0f58502001ed2d75d23d3104",
         "test_files": [
@@ -103,10 +103,10 @@
     },
     {
       "id": "git-c30678d19e",
-      "prompt": "don't allow timestamps from the future\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): tests/test_itsdangerous/test_timed.py\nRun them with: \"python\" -m pytest -q -p no:cacheprovider -o pythonpath=src tests/test_itsdangerous/test_timed.py",
+      "prompt": "don't allow timestamps from the future\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): tests/test_itsdangerous/test_timed.py\nRun them with: {python} -m pytest -q -p no:cacheprovider -o pythonpath=src tests/test_itsdangerous/test_timed.py",
       "verifier": {
         "type": "command",
-        "cmd": "\"python\" -m pytest -q -p no:cacheprovider -o pythonpath=src tests/test_itsdangerous/test_timed.py"
+        "cmd": "{python} -m pytest -q -p no:cacheprovider -o pythonpath=src tests/test_itsdangerous/test_timed.py"
       },
       "split": "train",
       "tags": [
@@ -114,7 +114,7 @@
         "itsdangerous"
       ],
       "meta": {
-        "repo": "repos\\itsdangerous",
+        "repo": "repos/itsdangerous",
         "base": "1a9b8d1f9968eb248bda69f39d373a6330b692ba",
         "commit": "c30678d19e37011890e2374cca04f7789e101793",
         "test_files": [
@@ -128,10 +128,10 @@
     },
     {
       "id": "git-910a7a94ee",
-      "prompt": "datetimes are timezone-aware utc\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): tests/test_itsdangerous/test_timed.py\nRun them with: \"python\" -m pytest -q -p no:cacheprovider -o pythonpath=src tests/test_itsdangerous/test_timed.py",
+      "prompt": "datetimes are timezone-aware utc\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): tests/test_itsdangerous/test_timed.py\nRun them with: {python} -m pytest -q -p no:cacheprovider -o pythonpath=src tests/test_itsdangerous/test_timed.py",
       "verifier": {
         "type": "command",
-        "cmd": "\"python\" -m pytest -q -p no:cacheprovider -o pythonpath=src tests/test_itsdangerous/test_timed.py"
+        "cmd": "{python} -m pytest -q -p no:cacheprovider -o pythonpath=src tests/test_itsdangerous/test_timed.py"
       },
       "split": "train",
       "tags": [
@@ -139,7 +139,7 @@
         "itsdangerous"
       ],
       "meta": {
-        "repo": "repos\\itsdangerous",
+        "repo": "repos/itsdangerous",
         "base": "3703fbdedd13b2630dd9be75a3638408c193765d",
         "commit": "910a7a94ee88b15d0677f65ed87d7ccbbd998048",
         "test_files": [
@@ -155,10 +155,10 @@
     },
     {
       "id": "git-6c58e969a5",
-      "prompt": "Added fallback signer support to timed serializer\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): tests/test_itsdangerous/test_timed.py\nRun them with: \"python\" -m pytest -q -p no:cacheprovider -o pythonpath=src tests/test_itsdangerous/test_timed.py",
+      "prompt": "Added fallback signer support to timed serializer\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): tests/test_itsdangerous/test_timed.py\nRun them with: {python} -m pytest -q -p no:cacheprovider -o pythonpath=src tests/test_itsdangerous/test_timed.py",
       "verifier": {
         "type": "command",
-        "cmd": "\"python\" -m pytest -q -p no:cacheprovider -o pythonpath=src tests/test_itsdangerous/test_timed.py"
+        "cmd": "{python} -m pytest -q -p no:cacheprovider -o pythonpath=src tests/test_itsdangerous/test_timed.py"
       },
       "split": "heldout",
       "tags": [
@@ -166,7 +166,7 @@
         "itsdangerous"
       ],
       "meta": {
-        "repo": "repos\\itsdangerous",
+        "repo": "repos/itsdangerous",
         "base": "f966a62e4c0031b885566b529cc33fe9f6ae9f18",
         "commit": "6c58e969a513646c8e37260417929770a4ab1b67",
         "test_files": [
@@ -179,10 +179,10 @@
     },
     {
       "id": "git-f966a62e4c",
-      "prompt": "Added fallback signers and switch back to sha1\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): tests/test_itsdangerous/test_serializer.py\nRun them with: \"python\" -m pytest -q -p no:cacheprovider -o pythonpath=src tests/test_itsdangerous/test_serializer.py",
+      "prompt": "Added fallback signers and switch back to sha1\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): tests/test_itsdangerous/test_serializer.py\nRun them with: {python} -m pytest -q -p no:cacheprovider -o pythonpath=src tests/test_itsdangerous/test_serializer.py",
       "verifier": {
         "type": "command",
-        "cmd": "\"python\" -m pytest -q -p no:cacheprovider -o pythonpath=src tests/test_itsdangerous/test_serializer.py"
+        "cmd": "{python} -m pytest -q -p no:cacheprovider -o pythonpath=src tests/test_itsdangerous/test_serializer.py"
       },
       "split": "train",
       "tags": [
@@ -190,7 +190,7 @@
         "itsdangerous"
       ],
       "meta": {
-        "repo": "repos\\itsdangerous",
+        "repo": "repos/itsdangerous",
         "base": "2ef8fe08c159de9f1232dbab86f8606aecd6392b",
         "commit": "f966a62e4c0031b885566b529cc33fe9f6ae9f18",
         "test_files": [
@@ -204,10 +204,10 @@
     },
     {
       "id": "git-cf6cd3dad4",
-      "prompt": "Skip the transliteration backend for ASCII text (#201)\n\nEvery backend (text-unidecode, Unidecode, anyascii) maps 7-bit ASCII to\nitself, so ASCII input no longer imports one. With text-unidecode this\navoids loading its ~3 MB table for the common case of ASCII slugs.\nOutput is unchanged, including the frozen legacy differential.\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): tests/test_release.py\nRun them with: \"python\" -m pytest -q -p no:cacheprovider -o pythonpath=. tests/test_release.py",
+      "prompt": "Skip the transliteration backend for ASCII text (#201)\n\nEvery backend (text-unidecode, Unidecode, anyascii) maps 7-bit ASCII to\nitself, so ASCII input no longer imports one. With text-unidecode this\navoids loading its ~3 MB table for the common case of ASCII slugs.\nOutput is unchanged, including the frozen legacy differential.\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): tests/test_release.py\nRun them with: {python} -m pytest -q -p no:cacheprovider -o pythonpath=. tests/test_release.py",
       "verifier": {
         "type": "command",
-        "cmd": "\"python\" -m pytest -q -p no:cacheprovider -o pythonpath=. tests/test_release.py"
+        "cmd": "{python} -m pytest -q -p no:cacheprovider -o pythonpath=. tests/test_release.py"
       },
       "split": "train",
       "tags": [
@@ -215,7 +215,7 @@
         "python-slugify"
       ],
       "meta": {
-        "repo": "repos\\python-slugify",
+        "repo": "repos/python-slugify",
         "base": "2fe6cec4842039814217cb8d089c6fcb9f8c154b",
         "commit": "cf6cd3dad45dea9641755adab80c00a9dbaee709",
         "test_files": [
@@ -229,10 +229,10 @@
     },
     {
       "id": "git-8f9a550a90",
-      "prompt": "Avoid trailing post-replacement delimiters in modern hard cuts (#200)\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): tests/test_release.py\nRun them with: \"python\" -m pytest -q -p no:cacheprovider -o pythonpath=. tests/test_release.py",
+      "prompt": "Avoid trailing post-replacement delimiters in modern hard cuts (#200)\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): tests/test_release.py\nRun them with: {python} -m pytest -q -p no:cacheprovider -o pythonpath=. tests/test_release.py",
       "verifier": {
         "type": "command",
-        "cmd": "\"python\" -m pytest -q -p no:cacheprovider -o pythonpath=. tests/test_release.py"
+        "cmd": "{python} -m pytest -q -p no:cacheprovider -o pythonpath=. tests/test_release.py"
       },
       "split": "heldout",
       "tags": [
@@ -240,7 +240,7 @@
         "python-slugify"
       ],
       "meta": {
-        "repo": "repos\\python-slugify",
+        "repo": "repos/python-slugify",
         "base": "c442cd4cb61763c85b078d6ea83b5959c3ff364a",
         "commit": "8f9a550a906701412c8fc93e731582098f2caee2",
         "test_files": [
@@ -253,10 +253,10 @@
     },
     {
       "id": "git-2f23599bfb",
-      "prompt": "Fix add_uppercase_char to leave input unchanged on error (#194)\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): test_add_uppercase_error.py\nRun them with: \"python\" -m pytest -q -p no:cacheprovider -o pythonpath=. test_add_uppercase_error.py",
+      "prompt": "Fix add_uppercase_char to leave input unchanged on error (#194)\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): test_add_uppercase_error.py\nRun them with: {python} -m pytest -q -p no:cacheprovider -o pythonpath=. test_add_uppercase_error.py",
       "verifier": {
         "type": "command",
-        "cmd": "\"python\" -m pytest -q -p no:cacheprovider -o pythonpath=. test_add_uppercase_error.py"
+        "cmd": "{python} -m pytest -q -p no:cacheprovider -o pythonpath=. test_add_uppercase_error.py"
       },
       "split": "train",
       "tags": [
@@ -264,7 +264,7 @@
         "python-slugify"
       ],
       "meta": {
-        "repo": "repos\\python-slugify",
+        "repo": "repos/python-slugify",
         "base": "548b14fab321ae9bfcb6db7fd990f6ddd7d3192b",
         "commit": "2f23599bfb2efe4ceecfad64997fda0a2c1f9f0d",
         "test_files": [
@@ -277,10 +277,10 @@
     },
     {
       "id": "git-548b14fab3",
-      "prompt": "Preserve fitting post-replacement output during modern truncation (#193)\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): test_release.py\nRun them with: \"python\" -m pytest -q -p no:cacheprovider -o pythonpath=. test_release.py",
+      "prompt": "Preserve fitting post-replacement output during modern truncation (#193)\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): test_release.py\nRun them with: {python} -m pytest -q -p no:cacheprovider -o pythonpath=. test_release.py",
       "verifier": {
         "type": "command",
-        "cmd": "\"python\" -m pytest -q -p no:cacheprovider -o pythonpath=. test_release.py"
+        "cmd": "{python} -m pytest -q -p no:cacheprovider -o pythonpath=. test_release.py"
       },
       "split": "heldout",
       "tags": [
@@ -288,7 +288,7 @@
         "python-slugify"
       ],
       "meta": {
-        "repo": "repos\\python-slugify",
+        "repo": "repos/python-slugify",
         "base": "df37f92c5329eaf28328e88d0da0a7a93709e37a",
         "commit": "548b14fab321ae9bfcb6db7fd990f6ddd7d3192b",
         "test_files": [
@@ -301,10 +301,10 @@
     },
     {
       "id": "git-df37f92c53",
-      "prompt": "Support uppercase hexadecimal references in modern slugs (#195)\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): test_release.py\nRun them with: \"python\" -m pytest -q -p no:cacheprovider -o pythonpath=. test_release.py",
+      "prompt": "Support uppercase hexadecimal references in modern slugs (#195)\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): test_release.py\nRun them with: {python} -m pytest -q -p no:cacheprovider -o pythonpath=. test_release.py",
       "verifier": {
         "type": "command",
-        "cmd": "\"python\" -m pytest -q -p no:cacheprovider -o pythonpath=. test_release.py"
+        "cmd": "{python} -m pytest -q -p no:cacheprovider -o pythonpath=. test_release.py"
       },
       "split": "train",
       "tags": [
@@ -312,7 +312,7 @@
         "python-slugify"
       ],
       "meta": {
-        "repo": "repos\\python-slugify",
+        "repo": "repos/python-slugify",
         "base": "bc388221e3b48a0d33fc64090acb3985ba955fdf",
         "commit": "df37f92c5329eaf28328e88d0da0a7a93709e37a",
         "test_files": [

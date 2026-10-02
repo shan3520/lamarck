@@ -78,9 +78,17 @@ class TaskSuite:
 
     @classmethod
     def load(cls, path: str | Path) -> "TaskSuite":
-        data = json.loads(Path(path).read_text(encoding="utf-8"))
+        """Relative `meta.repo` paths (git-mined tasks) are resolved against the task file's folder,
+        so a task suite can be committed and used on any machine."""
+        path = Path(path)
+        data = json.loads(path.read_text(encoding="utf-8"))
         items = data["tasks"] if isinstance(data, dict) else data
-        return cls([Task.from_dict(d) for d in items])
+        tasks = [Task.from_dict(d) for d in items]
+        for t in tasks:
+            repo = t.meta.get("repo")
+            if repo and not Path(repo).is_absolute():
+                t.meta["repo"] = str((path.parent / repo).resolve())
+        return cls(tasks)
 
     def save(self, path: str | Path) -> None:
         Path(path).write_text(json.dumps({"tasks": [t.to_dict() for t in self.tasks]}, indent=2), encoding="utf-8")
@@ -170,6 +178,14 @@ def _check_json(v: dict, output: str) -> Verdict:
     return Verdict(True)
 
 
+def expand_python(text: str) -> str:
+    """Replace the `{python}` placeholder with the running interpreter (quoted), so committed
+    task files work on any machine and always use the environment Lamarck runs in."""
+    import sys
+
+    return text.replace("{python}", f'"{Path(sys.executable).as_posix()}"')
+
+
 def plain_env() -> dict:
     """Environment for test/agent subprocesses: UTF-8 I/O and no ANSI colors (they waste tokens)."""
     import os
@@ -183,7 +199,7 @@ def _check_command(v: dict, workdir, timeout: int) -> Verdict:
     if workdir is None:
         return Verdict(False, "FAIL: command verifier needs a working directory")
     try:
-        proc = subprocess.run(v["cmd"], shell=True, cwd=str(workdir), capture_output=True, text=True, encoding="utf-8", errors="replace",
+        proc = subprocess.run(expand_python(v["cmd"]), shell=True, cwd=str(workdir), capture_output=True, text=True, encoding="utf-8", errors="replace",
                               timeout=v.get("timeout", timeout), env=plain_env())
     except subprocess.TimeoutExpired:
         return Verdict(False, "FAIL: verification command timed out")

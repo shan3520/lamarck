@@ -77,3 +77,21 @@ def test_all_verifier_gives_partial_credit_and_lists_every_failure():
     r = verify(t(v), "nothing here")
     assert r.detail.splitlines() == ["FAIL: must be signed", "also FAIL: must cite ticket"]
     assert verify(t(v), "Sig #12345").score == 1.0
+
+
+def test_python_placeholder_and_relative_repo_paths(tmp_path):
+    import json
+    from pathlib import Path
+
+    from lamarck.tasks import expand_python
+
+    assert expand_python("{python} -m pytest") == f'"{Path(sys.executable).as_posix()}" -m pytest'
+    (tmp_path / "s").mkdir()
+    (tmp_path / "s" / "tasks.json").write_text(json.dumps({"tasks": [
+        {"id": "git-1", "prompt": "p", "verifier": {"type": "command", "cmd": "{python} -c \"print(1)\""}, "meta": {"repo": "repos/x"}},
+        {"id": "git-2", "prompt": "p", "verifier": {"type": "exact", "value": "x"}, "meta": {"repo": str(tmp_path / "abs")}},
+    ]}))
+    suite = TaskSuite.load(tmp_path / "s" / "tasks.json")
+    assert Path(suite.tasks[0].meta["repo"]) == (tmp_path / "s" / "repos" / "x").resolve()
+    assert suite.tasks[1].meta["repo"] == str(tmp_path / "abs")
+    assert verify(suite.tasks[0], "", workdir=tmp_path).passed

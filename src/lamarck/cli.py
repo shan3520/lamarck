@@ -236,7 +236,7 @@ def main(argv: list[str] | None = None) -> int:
 
     m = sub.add_parser("mine-git", help="mine verified tasks from git history")
     m.add_argument("--repo", default=".")
-    m.add_argument("--test-cmd", default="python -m pytest -q {tests}", help="verifier command; {tests} is replaced by the task's test files")
+    m.add_argument("--test-cmd", default="{python} -m pytest -q {tests}", help="verifier command; {tests} = the task's test files, {python} = the interpreter Lamarck runs in")
     m.add_argument("--out", default="tasks.json")
     m.add_argument("--max-commits", type=int, default=300)
     m.add_argument("--max-tasks", type=int, default=60)

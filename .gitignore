@@ -8,3 +8,4 @@ runs/
 .env
 .lamarck/runs/
 *.console.log
+examples/real-repo/repos/
