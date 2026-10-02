@@ -68,7 +68,7 @@ class CommandTarget:
                 err = "agent timed out"
             v = verify(task, out, workdir=wt)
             trace = f"AGENT OUTPUT (tail):\n{out[-3000:]}\n\nAGENT STDERR (tail):\n{err[-1000:]}\n\nVERIFIER: {v.detail or 'PASS'}"
-            return Trial(task.id, v.passed, output=out[-4000:], detail=v.detail, trace=trace, tokens=0)
+            return Trial(task.id, v.passed, output=out[-4000:], detail=v.detail, trace=trace, tokens=0, score=v.score)
         finally:
             try:
                 if wt.exists():

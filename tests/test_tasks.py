@@ -61,3 +61,19 @@ def test_task_specific_literals():
     lits = task_specific_literals(suite)
     assert {"only-in-one", "task-a", "task-b", "48213", "51007"} <= lits
     assert "Shared Sig" not in lits
+
+
+def test_all_verifier_gives_partial_credit_and_lists_every_failure():
+    v = {"type": "all", "checks": [
+        {"type": "contains", "values": ["Sig"], "label": "must be signed"},
+        {"type": "regex", "pattern": r"#\d{5}", "label": "must cite ticket"},
+        {"type": "not_contains", "values": ["guarantee"]},
+    ]}
+    r = verify(t(v), "we guarantee it")
+    assert not r.passed and abs(r.score - 0.0) < 1e-9
+    r = verify(t(v), "Ticket #12345")
+    assert not r.passed and abs(r.score - 2 / 3) < 1e-9
+    assert r.detail == "FAIL: must be signed"
+    r = verify(t(v), "nothing here")
+    assert r.detail.splitlines() == ["FAIL: must be signed", "also FAIL: must cite ticket"]
+    assert verify(t(v), "Sig #12345").score == 1.0

@@ -25,6 +25,10 @@ class RefusalError(LLMError):
     pass
 
 
+class EmptyResponseError(LLMError):
+    pass
+
+
 @dataclass
 class Completion:
     text: str
@@ -111,6 +115,8 @@ def complete(
         resp = client.beta.messages.create(betas=[FALLBACK_BETA], fallbacks="default", **kwargs)
     else:
         resp = client.messages.create(**kwargs)
+    if not getattr(resp, "content", None):  # some gateway providers occasionally return an empty body
+        raise EmptyResponseError(f"{model} returned an empty response (stop_reason={getattr(resp, 'stop_reason', None)})")
     if resp.stop_reason == "refusal":
         raise RefusalError(f"{model} declined the request")
     text = "".join(getattr(b, "text", "") for b in resp.content if getattr(b, "type", "") == "text")

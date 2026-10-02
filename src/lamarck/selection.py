@@ -28,6 +28,7 @@ class GateConfig:
     noise_mult: float = 1.0  # gain must exceed noise_mult × noise band (mean-rate units)
     tokens_per_point: float = 4000.0  # cost rule: each +1 task-unit of gain may add this many tokens per rollout
     solved_threshold: float = 0.5
+    min_heldout_rollouts: int = 20  # below this, a held-out result is reported as inconclusive, never SHIP
 
 
 @dataclass

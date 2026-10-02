@@ -35,7 +35,8 @@ class Node:
     regression: float = 0.0  # R vs parent
     lineage_gain: float = 0.0  # G = G(parent) + g
     train_rates: dict[str, float] = field(default_factory=dict)
-    heldout_mean: float | None = None
+    heldout_mean: float | None = None  # mean partial-credit score on held-out tasks
+    heldout_pass: float | None = None  # strict full-pass rate on held-out tasks
     tokens_per_rollout: float = 0.0
     iteration: int = 0
     merged_from: list[str] = field(default_factory=list)

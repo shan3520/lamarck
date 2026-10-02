@@ -18,11 +18,17 @@ class Trial:
     trace: str = ""  # whatever the agent did, for the weakness miner
     tokens: int = 0
     error: str | None = None  # infrastructure error (not the agent's fault)
+    score: float | None = None  # partial credit in [0, 1]; defaults to 1.0 / 0.0
+
+    def __post_init__(self) -> None:
+        if self.score is None:
+            self.score = 1.0 if self.passed else 0.0
 
     def to_dict(self) -> dict:
         return {
             "task_id": self.task_id,
             "passed": self.passed,
+            "score": self.score,
             "output": self.output[-4000:],
             "detail": self.detail,
             "trace": self.trace[-4000:],

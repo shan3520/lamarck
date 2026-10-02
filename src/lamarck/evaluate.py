@@ -51,7 +51,14 @@ class EvalResult:
 
     @property
     def mean(self) -> float:
+        """Mean partial-credit score."""
         return sum(self.rates.values()) / len(self.rates) if self.rates else 0.0
+
+    @property
+    def pass_rate(self) -> float:
+        """Share of rollouts that fully passed (the strict number)."""
+        ts = [t for v in self.trials.values() for t in v]
+        return sum(t.passed and t.error is None for t in ts) / len(ts) if ts else 0.0
 
     def solved(self, threshold: float = 0.5) -> set[str]:
         return {t for t, r in self.rates.items() if r >= threshold}
@@ -73,7 +80,7 @@ def _summarize(trials: dict[str, list[Trial]], tokens: int) -> EvalResult:
         scored = [t for t in ts if t.error is None]
         errors += len(ts) - len(scored)
         # an infra error counts as a failure with the full denominator (RRSI: missing trial = 0)
-        rates[tid] = sum(t.passed for t in scored) / len(ts) if ts else 0.0
+        rates[tid] = sum(t.score for t in scored) / len(ts) if ts else 0.0  # mean partial-credit score
         k = max(k, len(ts))
     return EvalResult(rates=rates, trials=trials, k=k, tokens=tokens, infra_errors=errors)
 
@@ -109,12 +116,19 @@ def noise_band(result: EvalResult, n_boot: int = 400, seed: int = 0) -> float:
     if not result.trials:
         return 0.0
     rng = random.Random(seed)
+    if min(len(ts) for ts in result.trials.values()) < 2:
+        # One rollout per task carries no within-task noise information (it would read as 0).
+        # Fall back to resampling tasks: a conservative standard error of the mean.
+        per_task = list(result.rates.values())
+        boots = [sum(rng.choice(per_task) for _ in per_task) / len(per_task) for _ in range(n_boot)]
+        mu = sum(boots) / len(boots)
+        return math.sqrt(sum((m - mu) ** 2 for m in boots) / (len(boots) - 1))
     means = []
     for _ in range(n_boot):
         total = 0.0
         for ts in result.trials.values():
             sample = [rng.choice(ts) for _ in ts]
-            total += sum(t.passed and t.error is None for t in sample) / len(sample)
+            total += sum(t.score for t in sample if t.error is None) / len(sample)
         means.append(total / len(result.trials))
     mu = sum(means) / len(means)
     return math.sqrt(sum((m - mu) ** 2 for m in means) / (len(means) - 1))

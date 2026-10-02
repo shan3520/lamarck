@@ -102,7 +102,7 @@ def mine(result: EvalResult, examples_per_cluster: int = 3) -> Evidence:
     for tid in variance:
         ts = result.trials[tid]
         good = next((t for t in ts if t.passed), None)
-        bad = next((t for t in ts if not t.passed and t.error is None), None)
+        bad = min((t for t in ts if not t.passed and t.error is None), key=lambda t: t.score, default=None)
         if good and bad:
             contrasts.append((good, bad))
 

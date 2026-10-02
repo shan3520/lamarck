@@ -68,7 +68,7 @@ def test_regression_gate_blocks_interference_from_best_lineage():
 def test_report_renders():
     r = run(ScriptedProposer(), iterations=4)
     text = render(r)
-    assert "Verdict:" in text and "Held-out tasks" in text and "```diff" in text
+    assert "Verdict:" in text and "Held-out score" in text and "```diff" in text
 
 
 def test_runs_are_reproducible():

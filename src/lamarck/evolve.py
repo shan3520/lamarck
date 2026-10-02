@@ -290,9 +290,15 @@ class Evolver:
             best_h = self._eval(self.archive.harness(best), self.heldout, cfg.k_heldout, seed_offset=10_000)
             noise = math.sqrt(noise_band(root_h) ** 2 + noise_band(best_h) ** 2)
             decision = heldout_gate(root_h.mean, best_h.mean, noise, cfg.gate.noise_mult)
+            n_held = len(self.heldout) * cfg.k_heldout
+            if n_held < cfg.gate.min_heldout_rollouts:
+                decision = Decision(False, f"inconclusive: only {n_held} held-out rollouts (need >= {cfg.gate.min_heldout_rollouts}); "
+                                           f"held-out {(best_h.mean - root_h.mean) * 100:+.1f} pts, noise {noise * 100:.1f} pts")
             root.heldout_mean, best.heldout_mean = root_h.mean, best_h.mean
+            root.heldout_pass, best.heldout_pass = root_h.pass_rate, best_h.pass_rate
+            self.log(f"  held-out full-pass rate: {root_h.pass_rate * 100:.1f}% -> {best_h.pass_rate * 100:.1f}%")
             train_gain = sum(best.train_rates.values()) / len(best.train_rates) - sum(root.train_rates.values()) / len(root.train_rates)
-            self.log(f"  train: {train_gain * 100:+.1f} pts | held-out: {(best_h.mean - root_h.mean) * 100:+.1f} pts -> {'SHIP' if decision.accept else 'DO NOT SHIP'} ({decision.reason})")
+            self.log(f"  train: {train_gain * 100:+.1f} pts | held-out: {(best_h.mean - root_h.mean) * 100:+.1f} pts -> {'SHIP' if decision.accept else ('INCONCLUSIVE' if decision.reason.startswith('inconclusive') else 'DO NOT SHIP')} ({decision.reason})")
         return RunResult(self.archive, best, root_h, best_h, decision, self.history, self.tokens, self.rollouts, self.lines)
 
 

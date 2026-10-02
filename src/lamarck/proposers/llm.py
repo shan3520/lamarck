@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from ..harness import ALL_OPS, Edit, Harness
-from ..llm import DEFAULT_MODEL, complete, make_client
+from ..llm import DEFAULT_MODEL, EmptyResponseError, RefusalError, complete, make_client
 from ..miner import Evidence
 from .base import HistoryEntry, Proposal
 
@@ -81,17 +81,23 @@ class LLMProposer:
     def propose(self, harness: Harness, evidence: Evidence, budget: int, history: list[HistoryEntry], iteration: int) -> list[Proposal]:
         if self.client is None:
             self.client = make_client()
-        comp = complete(
-            self.client,
-            model=self.model,
-            system=SYSTEM.format(budget=budget),
-            user=build_prompt(harness, evidence, budget, history, self.n_proposals),
-            effort=self.effort,
-            json_schema=SCHEMA,
-            fallbacks=True,
-        )
-        self.tokens_used += comp.tokens
-        return parse_proposals(comp.text, budget)
+        for attempt in range(2):  # one retry: free gateway models occasionally return nothing
+            try:
+                comp = complete(
+                    self.client,
+                    model=self.model,
+                    system=SYSTEM.format(budget=budget),
+                    user=build_prompt(harness, evidence, budget, history, self.n_proposals),
+                    effort=self.effort,
+                    json_schema=SCHEMA,
+                    fallbacks=True,
+                )
+            except (EmptyResponseError, RefusalError):
+                continue
+            self.tokens_used += comp.tokens
+            if isinstance(_load_json(comp.text), dict) and "proposals" in _load_json(comp.text):
+                return parse_proposals(comp.text, budget)  # a valid answer, even if it proposes nothing
+        return []
 
 
 def build_prompt(harness: Harness, evidence: Evidence, budget: int, history: list[HistoryEntry], n: int) -> str:

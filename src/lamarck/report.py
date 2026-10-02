@@ -32,13 +32,14 @@ def render(result: RunResult, title: str = "Lamarck run report") -> str:
     rejected = Counter(_reason_kind(n) for n in nodes if n.status == REVERTED)
 
     lines = [f"# {title}", ""]
-    verdict = "SHIP" if result.decision.accept else "DO NOT SHIP"
+    verdict = "SHIP" if result.decision.accept else ("INCONCLUSIVE" if result.decision.reason.startswith("inconclusive") else "DO NOT SHIP")
     lines += [f"**Verdict: {verdict}** - {result.decision.reason}", ""]
     lines += [
         "| | Seed harness | Best variant |",
         "|---|---|---|",
-        f"| Train tasks (seen by the loop) | {_pct(_mean(root.train_rates))} | {_pct(_mean(best.train_rates))} |",
-        f"| Held-out tasks (never seen) | {_pct(root.heldout_mean)} | {_pct(best.heldout_mean)} |",
+        f"| Train score (seen by the loop) | {_pct(_mean(root.train_rates))} | {_pct(_mean(best.train_rates))} |",
+        f"| Held-out score (never seen) | {_pct(root.heldout_mean)} | {_pct(best.heldout_mean)} |",
+        f"| Held-out full-pass rate | {_pct(root.heldout_pass)} | {_pct(best.heldout_pass)} |",
         f"| Harness size | {len(arc.root_harness.render())} chars | {len(arc.harness(best).render())} chars |",
         "",
     ]
@@ -84,6 +85,7 @@ def render(result: RunResult, title: str = "Lamarck run report") -> str:
         "## Notes",
         "- Selection uses train tasks only. Held-out tasks were evaluated once, for the pre-registered best variant.",
         "- Gains inside the noise band are not counted (avg@k rollouts, bootstrap noise estimate).",
+        "- Scores give partial credit (fraction of a task's checks passed); the full-pass rate is the strict number.",
     ]
     return "\n".join(lines) + "\n"
 

@@ -118,3 +118,12 @@ def test_openrouter_gateway(monkeypatch, tmp_path):
     LLMProposer(client=client).propose(Harness({"system.md": "x"}), Evidence([], [], [], [], [], {}), 1, [], 0)
     assert client.messages.calls and not client.beta.messages.calls
     assert client.messages.calls[0]["model"] == "anthropic/claude-opus-5.5"
+
+
+def test_empty_gateway_response_is_retried_then_skipped():
+    empty = SimpleNamespace(content=None, stop_reason=None, usage=SimpleNamespace(input_tokens=0, output_tokens=0), model="m")
+    client = FakeClient([empty, empty])
+    assert LLMProposer(client=client).propose(Harness({"system.md": "x"}), Evidence([], [], [], [], [], {}), 1, [], 0) == []
+    assert len(client.beta.messages.calls) == 2  # proposer calls go through the fallback-enabled endpoint
+    trial = AnthropicTarget(client=FakeClient([empty])).run(Harness({"system.md": "x"}), TASK, 0)
+    assert trial.error and not trial.passed

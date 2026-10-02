@@ -49,6 +49,6 @@ def edit_budget(iteration: int, total_iterations: int, start: int = 3, end: int 
     """RRSI's temporally annealed budget: early candidates may bundle a few edits,
     late candidates only one, so late search makes small, attributable changes."""
     if total_iterations <= 1:
-        return end
+        return start
     frac = iteration / (total_iterations - 1)
     return max(end, round(start - (start - end) * frac))

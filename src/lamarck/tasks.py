@@ -90,6 +90,11 @@ class TaskSuite:
 class Verdict:
     passed: bool
     detail: str = ""
+    score: float | None = None  # partial credit in [0, 1]; defaults to 1.0 / 0.0
+
+    def __post_init__(self) -> None:
+        if self.score is None:
+            self.score = 1.0 if self.passed else 0.0
 
 
 def verify(task: Task, output: str, workdir: str | Path | None = None, timeout: int = 600) -> Verdict:
@@ -124,11 +129,15 @@ def _check(v: dict, output: str, workdir, timeout: int) -> Verdict:
     if kind == "command":
         return _check_command(v, workdir, timeout)
     if kind == "all":
-        for sub in v["checks"]:
-            r = _check(sub, output, workdir, timeout)
-            if not r.passed:
-                return r
-        return Verdict(True)
+        # Partial credit + every failing rule listed: a fix for one of several required
+        # conventions must be visible as progress, and the proposer must see all of them.
+        results = [_check(sub, output, workdir, timeout) for sub in v["checks"]]
+        failed = [r for r in results if not r.passed]
+        score = sum(r.score for r in results) / len(results) if results else 1.0
+        if not failed:
+            return Verdict(True, score=1.0)
+        detail = failed[0].detail + "".join(f"\nalso {r.detail}" for r in failed[1:])
+        return Verdict(False, detail, score=score)
     raise ValueError(f"unknown verifier type {kind!r}; expected one of {VERIFIER_TYPES}")
 
 

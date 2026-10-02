@@ -83,3 +83,21 @@ def test_max_rollouts_stops_search_but_keeps_heldout_check():
     r = Evolver(SimulatedTarget(), ScriptedProposer(), demo_suite(), seed_harness(), cfg, log=None).run()
     assert r.total_rollouts <= 600
     assert any("Budget reached" in line for line in r.log)
+
+
+def test_single_rollout_noise_is_not_zero():
+    from lamarck.evaluate import EvalResult, noise_band
+    from lamarck.targets.base import Trial
+
+    trials = {f"t{i}": [Trial(f"t{i}", i % 3 == 0)] for i in range(6)}
+    res = EvalResult(rates={k: float(v[0].passed) for k, v in trials.items()}, trials=trials, k=1)
+    assert noise_band(res) > 0.05
+
+
+def test_tiny_heldout_sample_is_inconclusive_not_ship():
+    from lamarck.evolve import EvolveConfig, Evolver
+    from lamarck.sim import ScriptedProposer, SimulatedTarget, demo_suite, seed_harness
+
+    cfg = EvolveConfig(iterations=6, workers=1, k_heldout=1)
+    r = Evolver(SimulatedTarget(), ScriptedProposer(), demo_suite(24, 3), seed_harness(), cfg, log=None).run()
+    assert not r.decision.accept and r.decision.reason.startswith("inconclusive")

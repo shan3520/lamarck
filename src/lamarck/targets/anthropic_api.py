@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from ..harness import Harness
-from ..llm import DEFAULT_MODEL, RefusalError, complete, make_client
+from ..llm import DEFAULT_MODEL, EmptyResponseError, RefusalError, complete, make_client
 from ..tasks import Task, verify
 from .base import Trial
 
@@ -38,6 +38,8 @@ class AnthropicTarget:
             c = complete(self._client(), model=self.model, system=harness.render(), user=task.prompt, max_tokens=self.max_tokens, effort=self.effort)
         except RefusalError:
             return Trial(task.id, False, detail="FAIL: the model declined the request", trace="(refusal)")
+        except EmptyResponseError as exc:  # provider glitch, not the agent's fault: an infra error
+            return Trial(task.id, False, detail="FAIL: infrastructure error", error=str(exc))
         v = verify(task, c.text)
         trace = f"OUTPUT:\n{c.text[-2500:]}\n\nVERIFIER: {v.detail or 'PASS'}"
-        return Trial(task.id, v.passed, output=c.text, detail=v.detail, trace=trace, tokens=c.tokens)
+        return Trial(task.id, v.passed, output=c.text, detail=v.detail, trace=trace, tokens=c.tokens, score=v.score)

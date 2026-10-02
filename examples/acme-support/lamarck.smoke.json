@@ -1,0 +1,28 @@
+{
+  "harness_dir": "harness",
+  "tasks": "tasks.smoke.json",
+  "requests_per_minute": 18,
+  "target": {
+    "type": "anthropic",
+    "model": "qwen/qwen3.8-27b:free",
+    "effort": null,
+    "max_tokens": 3000
+  },
+  "proposer": {
+    "type": "anthropic",
+    "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+    "effort": null,
+    "n_proposals": 1
+  },
+  "evolve": {
+    "iterations": 1,
+    "proposals_per_iter": 1,
+    "k_screen": 1,
+    "k_confirm": 2,
+    "k_heldout": 1,
+    "workers": 3,
+    "max_rollouts": 24,
+    "max_total_tokens": 2000000
+  },
+  "gate": {}
+}
