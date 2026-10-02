@@ -1,9 +1,30 @@
 {
   "harness_dir": "harness",
   "tasks": "tasks.json",
-  "requests_per_minute": 12,
-  "target": {"type": "llm", "provider": "groq", "model": "llama-3.1-8b-instant", "effort": null, "max_tokens": 1500},
-  "proposer": {"type": "llm", "provider": "groq", "model": "openai/gpt-oss-120b", "effort": "medium", "n_proposals": 2},
-  "evolve": {"iterations": 4, "proposals_per_iter": 2, "k_screen": 2, "k_confirm": 3, "k_heldout": 3, "workers": 3, "max_rollouts": 900, "max_total_tokens": 3000000},
+  "requests_per_minute": 10,
+  "target": {
+    "type": "llm",
+    "provider": "groq",
+    "model": "openai/gpt-oss-20b",
+    "effort": "low",
+    "max_tokens": 1500
+  },
+  "proposer": {
+    "type": "llm",
+    "provider": "groq",
+    "model": "openai/gpt-oss-120b",
+    "effort": "medium",
+    "n_proposals": 2
+  },
+  "evolve": {
+    "iterations": 4,
+    "proposals_per_iter": 2,
+    "k_screen": 2,
+    "k_confirm": 3,
+    "k_heldout": 3,
+    "workers": 3,
+    "max_rollouts": 900,
+    "max_total_tokens": 3000000
+  },
   "gate": {}
 }

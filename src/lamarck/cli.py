@@ -169,7 +169,8 @@ def cmd_run(args) -> int:
         ":free" in r.get("model", "") or r.get("provider") == "groq" for r in llm_roles)
     print(f"Tasks: {len(suite.train())} train / {len(suite.heldout())} held-out. Upper-bound requests: ~{est}. Token cap: {ecfg.max_total_tokens}. Rate limit: {conf.get('requests_per_minute') or 'none'}/min.")
     if paid:
-        print(f"Model provider: {via}")
+        names = sorted({r.get("provider", "anthropic") for r in llm_roles})
+        print("Model provider: " + ", ".join(via if n == "anthropic" else n for n in names))
     if paid and not args.yes:
         what = "free-tier models (uses your daily free quota, no charges)" if free else "paid models / runs agents"
         reply = input(f"This run calls {what}. Continue? [y/N] ").strip().lower()

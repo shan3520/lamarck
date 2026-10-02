@@ -60,7 +60,7 @@ export ANTHROPIC_API_KEY=...   # or: ant auth login
 ```bash
 .venv/Scripts/lamarck run -c examples/acme-support/lamarck.groq.json
 ```
-The target is `llama-3.1-8b-instant` (about 14,400 requests/day free), a small model that leaves room to improve. The proposer is `openai/gpt-oss-120b` (about 1,000 requests/day). Groq's limits are per model and per organization. Per-minute limits are waited out automatically, and hitting a daily limit stops the run cleanly.
+The target is `openai/gpt-oss-20b`, the smaller model, which leaves room to improve. The proposer is `openai/gpt-oss-120b`. On 2026-10-02 each allowed 1,000 requests/day and 8,000 tokens/min free. Groq's limits are per model and per organization. Per-minute limits are waited out automatically, and hitting a daily limit stops the run cleanly.
 
 **OpenRouter free models:** `examples/acme-support/lamarck.free.json` uses OpenRouter `:free` models. A weaker target (`qwen/qwen3.8-27b:free`) leaves more room to improve, and the strongest free proposer is `nvidia/nemotron-3-ultra-550b-a55b:free`. The config sets these limits:
 - `requests_per_minute: 18` (OpenRouter allows 20)
