@@ -23,13 +23,14 @@ class AnthropicTarget:
     effort: str | None = "low"
     max_tokens: int = 4000
     client: Any = None
-    name: str = "anthropic"
+    provider: str = "anthropic"  # or "groq" (see chat_compat.PROVIDERS)
+    name: str = "llm"
     _lock: threading.Lock = field(default_factory=threading.Lock, repr=False)
 
     def _client(self) -> Any:
         with self._lock:
             if self.client is None:
-                self.client = make_client()
+                self.client = make_client(self.provider)
             return self.client
 
     def run(self, harness: Harness, task: Task, seed: int) -> Trial:

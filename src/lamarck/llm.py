@@ -73,7 +73,15 @@ def is_anthropic_model(model: str) -> bool:
     return "/" not in model or model.startswith("anthropic/")
 
 
-def make_client() -> Any:
+def make_client(provider_name: str = "anthropic") -> Any:
+    """`anthropic` (Anthropic SDK; also OpenRouter via ANTHROPIC_BASE_URL) or an OpenAI-compatible
+    provider from chat_compat.PROVIDERS (e.g. `groq`)."""
+    from .chat_compat import PROVIDERS, ChatClient
+
+    if provider_name in PROVIDERS:
+        return ChatClient.for_provider(provider_name)
+    if provider_name != "anthropic":
+        raise LLMError(f"unknown provider {provider_name!r}; expected 'anthropic' or one of {sorted(PROVIDERS)}")
     try:
         import anthropic
     except ImportError as exc:  # pragma: no cover - depends on environment
@@ -97,6 +105,18 @@ def complete(
     `fallbacks=True` lets the API re-run a refused request on another model. Use it for the
     *proposer* only: the *target* model must stay frozen, or measurements are meaningless.
     """
+    from .chat_compat import ChatClient, strip_reasoning
+
+    if isinstance(client, ChatClient):
+        LIMITER.wait()
+        data = client.chat(model=model, system=system, user=user, max_tokens=max_tokens, effort=effort, json_mode=bool(json_schema))
+        choice = (data.get("choices") or [{}])[0]
+        text = strip_reasoning((choice.get("message") or {}).get("content") or "")
+        if not text:
+            raise EmptyResponseError(f"{model} returned an empty response (finish_reason={choice.get('finish_reason')})")
+        usage = data.get("usage") or {}
+        return Completion(text, int(usage.get("prompt_tokens") or 0), int(usage.get("completion_tokens") or 0), str(data.get("model", model)), str(choice.get("finish_reason")))
+
     output_config: dict = {}
     if effort:
         output_config["effort"] = effort

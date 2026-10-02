@@ -56,7 +56,13 @@ export ANTHROPIC_API_KEY=...   # or: ant auth login
 ```
 **Using OpenRouter instead of an Anthropic key:** put `OPENROUTER_API_KEY=sk-or-...` in a `.env` file at the repo root (`.env` is git-ignored). Lamarck then routes the Anthropic SDK through OpenRouter's Anthropic-compatible endpoint and maps model ids (`claude-opus-5-5` becomes `anthropic/claude-opus-5.5`). Server-side refusal fallbacks are an Anthropic API feature, so they are switched off on OpenRouter.
 
-**Free models (no spend):** `examples/acme-support/lamarck.free.json` uses OpenRouter `:free` models. A weaker target (`qwen/qwen3.8-27b:free`) leaves more room to improve, and the strongest free proposer is `nvidia/nemotron-3-ultra-550b-a55b:free`. The config sets these limits:
+**Groq free tier (recommended free option):** put `GROQ_API_KEY=gsk_...` in `.env`, then run:
+```bash
+.venv/Scripts/lamarck run -c examples/acme-support/lamarck.groq.json
+```
+The target is `llama-3.1-8b-instant` (about 14,400 requests/day free), a small model that leaves room to improve. The proposer is `openai/gpt-oss-120b` (about 1,000 requests/day). Groq's limits are per model and per organization. Per-minute limits are waited out automatically, and hitting a daily limit stops the run cleanly.
+
+**OpenRouter free models:** `examples/acme-support/lamarck.free.json` uses OpenRouter `:free` models. A weaker target (`qwen/qwen3.8-27b:free`) leaves more room to improve, and the strongest free proposer is `nvidia/nemotron-3-ultra-550b-a55b:free`. The config sets these limits:
 - `requests_per_minute: 18` (OpenRouter allows 20)
 - `max_rollouts: 900`, so a run fits in one day's quota and always reserves the held-out check
 - a stop with a clear message if the daily quota runs out

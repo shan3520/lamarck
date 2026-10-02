@@ -127,3 +127,63 @@ def test_empty_gateway_response_is_retried_then_skipped():
     assert len(client.beta.messages.calls) == 2  # proposer calls go through the fallback-enabled endpoint
     trial = AnthropicTarget(client=FakeClient([empty])).run(Harness({"system.md": "x"}), TASK, 0)
     assert trial.error and not trial.passed
+
+
+def test_groq_chat_client(monkeypatch):
+    import io
+    import urllib.error
+
+    from lamarck import chat_compat
+    from lamarck.evaluate import is_fatal
+    from lamarck.llm import complete, make_client
+
+    monkeypatch.setenv("GROQ_API_KEY", "gsk_test")
+    client = make_client("groq")
+    sent = []
+
+    class Resp(io.BytesIO):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    replies = [
+        urllib.error.HTTPError("u", 429, "rate", {"retry-after": "0"}, io.BytesIO(b"Rate limit reached on tokens per minute (TPM)")),
+        Resp(json.dumps({"model": "llama-3.1-8b-instant", "choices": [{"message": {"content": "<think>hmm</think>Hello"}, "finish_reason": "stop"}],
+                         "usage": {"prompt_tokens": 10, "completion_tokens": 3}}).encode()),
+    ]
+
+    def fake_urlopen(req, timeout):
+        sent.append(json.loads(req.data))
+        r = replies.pop(0)
+        if isinstance(r, Exception):
+            raise r
+        return r
+
+    monkeypatch.setattr(chat_compat.urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.setattr(chat_compat.time, "sleep", lambda s: None)
+    c = complete(client, model="llama-3.1-8b-instant", system="s", user="u", max_tokens=100, json_schema={"type": "object"})
+    assert c.text == "Hello" and c.tokens == 13
+    assert len(sent) == 2 and sent[0]["response_format"] == {"type": "json_object"}
+    assert sent[0]["messages"][0] == {"role": "system", "content": "s"}
+
+    def daily(req, timeout):
+        raise urllib.error.HTTPError("u", 429, "rate", {}, io.BytesIO(b"Rate limit reached on requests per day (RPD): Limit 1000"))
+
+    monkeypatch.setattr(chat_compat.urllib.request, "urlopen", daily)
+    try:
+        complete(client, model="llama-3.1-8b-instant", system="s", user="u", max_tokens=100)
+        raise AssertionError("expected an error")
+    except chat_compat.GatewayHTTPError as exc:
+        assert exc.status_code == 429 and is_fatal(exc)
+
+
+def test_groq_requires_key(monkeypatch):
+    import pytest
+
+    from lamarck.llm import LLMError, make_client
+
+    monkeypatch.delenv("GROQ_API_KEY", raising=False)
+    with pytest.raises(LLMError, match="GROQ_API_KEY"):
+        make_client("groq")

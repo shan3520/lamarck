@@ -49,15 +49,16 @@ def build_target(spec: dict):
         from .sim import SimulatedTarget
 
         return SimulatedTarget()
-    if kind == "anthropic":
+    if kind in ("anthropic", "llm"):
         from .targets.anthropic_api import AnthropicTarget
 
-        return AnthropicTarget(model=spec.get("model", "claude-opus-5-5"), effort=spec.get("effort"), max_tokens=spec.get("max_tokens", 4000))
+        return AnthropicTarget(model=spec.get("model", "claude-opus-5-5"), effort=spec.get("effort"), max_tokens=spec.get("max_tokens", 4000),
+                               provider=spec.get("provider", "anthropic"))
     if kind == "command":
         from .targets.command import CommandTarget
 
         return CommandTarget(agent_cmd=spec["agent_cmd"], harness_file=spec.get("harness_file", "CLAUDE.md"), timeout=spec.get("timeout", 1800))
-    raise SystemExit(f"unknown target type {kind!r} (expected simulated | anthropic | command)")
+    raise SystemExit(f"unknown target type {kind!r} (expected simulated | llm | command)")
 
 
 def build_proposer(spec: dict):
@@ -66,11 +67,12 @@ def build_proposer(spec: dict):
         from .sim import ScriptedProposer
 
         return ScriptedProposer()
-    if kind == "anthropic":
+    if kind in ("anthropic", "llm"):
         from .proposers.llm import LLMProposer
 
-        return LLMProposer(model=spec.get("model", "claude-opus-5-5"), effort=spec.get("effort", "high"), n_proposals=spec.get("n_proposals", 3))
-    raise SystemExit(f"unknown proposer type {kind!r} (expected scripted | anthropic)")
+        return LLMProposer(model=spec.get("model", "claude-opus-5-5"), effort=spec.get("effort", "high"), n_proposals=spec.get("n_proposals", 3),
+                           provider=spec.get("provider", "anthropic"))
+    raise SystemExit(f"unknown proposer type {kind!r} (expected scripted | llm)")
 
 
 def _pick(cls, d: dict):
@@ -161,13 +163,15 @@ def cmd_run(args) -> int:
     est = len(suite.train()) * ecfg.k_confirm + ecfg.iterations * (ecfg.proposals_per_iter * len(suite.train()) * ecfg.k_confirm + 1) + 2 * len(suite.heldout()) * ecfg.k_heldout
     if ecfg.max_rollouts:
         est = min(est, ecfg.max_rollouts + ecfg.iterations)
-    paid = conf["target"].get("type") != "simulated" or conf["proposer"].get("type") == "anthropic"
-    free = all(":free" in conf[r].get("model", "") for r in ("target", "proposer") if conf[r].get("type") == "anthropic")
+    llm_roles = [conf[r] for r in ("target", "proposer") if conf[r].get("type") in ("anthropic", "llm")]
+    paid = conf["target"].get("type") != "simulated" or bool(llm_roles)
+    free = bool(llm_roles) and conf["target"].get("type") != "command" and all(
+        ":free" in r.get("model", "") or r.get("provider") == "groq" for r in llm_roles)
     print(f"Tasks: {len(suite.train())} train / {len(suite.heldout())} held-out. Upper-bound requests: ~{est}. Token cap: {ecfg.max_total_tokens}. Rate limit: {conf.get('requests_per_minute') or 'none'}/min.")
     if paid:
         print(f"Model provider: {via}")
     if paid and not args.yes:
-        what = "free models (uses your daily free-request quota)" if free else "paid models / runs agents"
+        what = "free-tier models (uses your daily free quota, no charges)" if free else "paid models / runs agents"
         reply = input(f"This run calls {what}. Continue? [y/N] ").strip().lower()
         if reply not in ("y", "yes"):
             print("Aborted.")

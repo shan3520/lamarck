@@ -75,12 +75,13 @@ class LLMProposer:
     effort: str | None = "high"
     n_proposals: int = 3
     client: Any = None
-    name: str = "anthropic"
+    provider: str = "anthropic"  # or "groq" (see chat_compat.PROVIDERS)
+    name: str = "llm"
     tokens_used: int = 0
 
     def propose(self, harness: Harness, evidence: Evidence, budget: int, history: list[HistoryEntry], iteration: int) -> list[Proposal]:
         if self.client is None:
-            self.client = make_client()
+            self.client = make_client(self.provider)
         for attempt in range(2):  # one retry: free gateway models occasionally return nothing
             try:
                 comp = complete(

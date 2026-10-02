@@ -26,7 +26,8 @@ FATAL_STATUS = {401: "authentication failed (check the API key)", 402: "out of c
 
 
 def _daily_quota_exhausted(exc: BaseException) -> bool:
-    return getattr(exc, "status_code", None) == 429 and "per-day" in str(exc).lower()
+    msg = str(exc).lower()
+    return getattr(exc, "status_code", None) == 429 and ("per-day" in msg or "per day" in msg)
 
 
 def is_fatal(exc: BaseException) -> bool:
