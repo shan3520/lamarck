@@ -17,6 +17,7 @@ from pathlib import Path
 
 from .critic import Critic
 from .env import configure_gateway, load_dotenv
+from .evaluate import describe_fatal, is_fatal
 from .evolve import EvolveConfig, Evolver, RunResult
 from .gitmine import MineConfig, mine_git_tasks
 from .harness import RULES, SYSTEM, Harness
@@ -166,7 +167,13 @@ def cmd_run(args) -> int:
             return 1
 
     critic = Critic(denylist=task_specific_literals(suite))
-    result = Evolver(target, proposer, suite, harness, ecfg, critic=critic).run()
+    try:
+        result = Evolver(target, proposer, suite, harness, ecfg, critic=critic).run()
+    except Exception as exc:
+        if is_fatal(exc):
+            print(f"\nRun stopped: {describe_fatal(exc)}. Nothing was shipped; fix this and re-run.")
+            return 3
+        raise
     out = Path(args.out) if args.out else base / "runs" / time.strftime("%Y%m%d-%H%M%S")
     write_run(result, out, f"Lamarck run: {cfg_path}")
     print(f"\nReport: {out / 'report.md'}\nBest harness: {out / 'best_harness.rendered.md'}")

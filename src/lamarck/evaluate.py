@@ -18,6 +18,23 @@ from .tasks import Task
 from .targets.base import Target, Trial
 
 
+class FatalRunError(RuntimeError):
+    """An error no amount of retrying fixes (out of credits, bad credentials). Aborts the run."""
+
+
+FATAL_STATUS = {401: "authentication failed (check the API key)", 402: "out of credits / payment required", 403: "permission denied for this model or key"}
+
+
+def is_fatal(exc: BaseException) -> bool:
+    return isinstance(exc, FatalRunError) or getattr(exc, "status_code", None) in FATAL_STATUS
+
+
+def describe_fatal(exc: BaseException) -> str:
+    if isinstance(exc, FatalRunError):
+        return str(exc)
+    return f"{FATAL_STATUS[exc.status_code]} (HTTP {exc.status_code})"
+
+
 @dataclass
 class EvalResult:
     rates: dict[str, float] = field(default_factory=dict)  # task_id -> avg@k solve rate
@@ -62,7 +79,9 @@ def evaluate(target: Target, harness: Harness, tasks: list[Task], k: int, seed: 
         task, s = job
         try:
             return target.run(harness, task, s)
-        except Exception as exc:  # infra failure: record it, never crash the search
+        except Exception as exc:  # infra failure: record it, never crash the search...
+            if is_fatal(exc):  # ...unless retrying can't help (billing, auth): stop the whole run
+                raise FatalRunError(describe_fatal(exc)) from exc
             return Trial(task.id, False, detail="FAIL: infrastructure error", error=f"{type(exc).__name__}: {exc}")
 
     if workers > 1:

@@ -40,7 +40,9 @@ def load_dotenv(*paths: str | Path) -> list[Path]:
 def configure_gateway() -> str:
     """Return the provider in use: 'openrouter', 'custom-gateway' or 'anthropic'."""
     base = os.environ.get("ANTHROPIC_BASE_URL", "")
-    if os.environ.get("OPENROUTER_API_KEY") and not base:
+    # An explicit OpenRouter key wins over inherited default Anthropic settings (e.g. a parent
+    # tool's own ANTHROPIC_AUTH_TOKEN), so runs bill the account the user chose.
+    if os.environ.get("OPENROUTER_API_KEY") and (not base or "anthropic.com" in base):
         os.environ["ANTHROPIC_BASE_URL"] = OPENROUTER_BASE
         os.environ["ANTHROPIC_AUTH_TOKEN"] = os.environ["OPENROUTER_API_KEY"]
         os.environ["ANTHROPIC_API_KEY"] = ""

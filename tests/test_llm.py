@@ -107,6 +107,11 @@ def test_openrouter_gateway(monkeypatch, tmp_path):
     assert env.model_id("claude-opus-5-5") == "anthropic/claude-opus-5.5"
     assert env.model_id("claude-haiku-4-5") == "anthropic/claude-haiku-4.5"
     assert env.model_id("anthropic/claude-sonnet-5.5") == "anthropic/claude-sonnet-5.5"
+    # an inherited default Anthropic base URL + token must not override the user's OpenRouter key
+    monkeypatch.setenv("ANTHROPIC_BASE_URL", "https://api.anthropic.com")
+    monkeypatch.setenv("ANTHROPIC_AUTH_TOKEN", "inherited-token")
+    assert env.configure_gateway() == "openrouter"
+    assert os.environ["ANTHROPIC_AUTH_TOKEN"] == "sk-or-test"
     # fallbacks are Anthropic-only: through a gateway the proposer uses the plain endpoint
     payload = {"proposals": []}
     client = FakeClient([response(json.dumps(payload))])
