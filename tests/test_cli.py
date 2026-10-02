@@ -1,0 +1,33 @@
+import json
+
+from lamarck.cli import main
+from lamarck.sim import demo_suite
+
+
+def test_demo_writes_run_directory(tmp_path):
+    out = tmp_path / "demo"
+    assert main(["demo", "--iterations", "4", "--out", str(out)]) == 0
+    for f in ("report.md", "archive.json", "summary.json", "best_harness.rendered.md", "log.txt"):
+        assert (out / f).exists(), f
+    assert json.loads((out / "summary.json").read_text())["rollouts"] > 0
+
+
+def test_init_then_run_with_simulated_backends(tmp_path):
+    proj = tmp_path / "proj"
+    assert main(["init", str(proj)]) == 0
+    demo_suite(12, 8).save(proj / "tasks.json")
+    conf = json.loads((proj / "lamarck.json").read_text())
+    conf["target"] = {"type": "simulated"}
+    conf["proposer"] = {"type": "scripted"}
+    conf["evolve"] = {"iterations": 4, "workers": 1}
+    (proj / "lamarck.json").write_text(json.dumps(conf))
+    code = main(["run", "-c", str(proj / "lamarck.json"), "--out", str(proj / "run")])
+    assert code in (0, 2)  # 0 = ship, 2 = nothing shippable; both are valid outcomes
+    assert (proj / "run" / "report.md").exists()
+
+
+def test_init_from_existing_claude_md(tmp_path):
+    src = tmp_path / "CLAUDE.md"
+    src.write_text("Use pnpm, not npm.\n")
+    assert main(["init", str(tmp_path / "p"), "--from", str(src)]) == 0
+    assert (tmp_path / "p" / "harness" / "system.md").read_text() == "Use pnpm, not npm.\n"

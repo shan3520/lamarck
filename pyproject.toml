@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lamarck"
+version = "0.1.0"
+description = "Evolve your coding agent's harness (CLAUDE.md, AGENTS.md, skills) against verified tasks, with held-out proof."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Proprietary" }
+dependencies = []
+
+[project.optional-dependencies]
+llm = ["anthropic>=1.11,<2"]
+dev = ["pytest>=8"]
+
+[project.scripts]
+lamarck = "lamarck.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

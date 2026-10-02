@@ -1,0 +1,8 @@
+{
+  "harness_dir": "harness",
+  "tasks": "tasks.json",
+  "target": {"type": "anthropic", "model": "claude-opus-5-5", "effort": "low", "max_tokens": 4000},
+  "proposer": {"type": "anthropic", "model": "claude-opus-5-5", "effort": "high", "n_proposals": 3},
+  "evolve": {"iterations": 5, "k_screen": 2, "k_confirm": 4, "k_heldout": 4, "workers": 6, "max_total_tokens": 2000000},
+  "gate": {}
+}

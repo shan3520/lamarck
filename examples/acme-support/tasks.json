@@ -1,0 +1,756 @@
+{
+  "tasks": [
+    {
+      "id": "acme-reply-00",
+      "prompt": "Write the reply to this customer message (ticket 48213):\n\n\"My invoice shows two charges for the Pro plan this month. Can you fix it?\"",
+      "verifier": {
+        "type": "all",
+        "checks": [
+          {
+            "type": "contains",
+            "values": [
+              "The Acme Support Team"
+            ],
+            "label": "replies must be signed 'The Acme Support Team'"
+          },
+          {
+            "type": "regex",
+            "pattern": "Ticket #\\d{5}\\b",
+            "label": "replies must reference the ticket as 'Ticket #<5 digits>'"
+          },
+          {
+            "type": "not_contains",
+            "values": [
+              "guarantee",
+              "Guarantee",
+              "within 24 hours",
+              "by tomorrow"
+            ],
+            "label": "replies must not promise timelines or guarantees"
+          },
+          {
+            "type": "regex",
+            "pattern": "USD \\d+\\.\\d{2}\\b",
+            "label": "amounts must be written as 'USD 0.00'"
+          }
+        ]
+      },
+      "tags": [
+        "reply",
+        "refund"
+      ],
+      "split": "train"
+    },
+    {
+      "id": "acme-reply-01",
+      "prompt": "Write the reply to this customer message (ticket 51007):\n\n\"The dashboard has been loading slowly since yesterday. When will it be fixed?\"",
+      "verifier": {
+        "type": "all",
+        "checks": [
+          {
+            "type": "contains",
+            "values": [
+              "The Acme Support Team"
+            ],
+            "label": "replies must be signed 'The Acme Support Team'"
+          },
+          {
+            "type": "regex",
+            "pattern": "Ticket #\\d{5}\\b",
+            "label": "replies must reference the ticket as 'Ticket #<5 digits>'"
+          },
+          {
+            "type": "not_contains",
+            "values": [
+              "guarantee",
+              "Guarantee",
+              "within 24 hours",
+              "by tomorrow"
+            ],
+            "label": "replies must not promise timelines or guarantees"
+          }
+        ]
+      },
+      "tags": [
+        "reply"
+      ],
+      "split": "train"
+    },
+    {
+      "id": "acme-reply-02",
+      "prompt": "Write the reply to this customer message (ticket 39920):\n\n\"I was charged 49 dollars after cancelling. I want my money back.\"",
+      "verifier": {
+        "type": "all",
+        "checks": [
+          {
+            "type": "contains",
+            "values": [
+              "The Acme Support Team"
+            ],
+            "label": "replies must be signed 'The Acme Support Team'"
+          },
+          {
+            "type": "regex",
+            "pattern": "Ticket #\\d{5}\\b",
+            "label": "replies must reference the ticket as 'Ticket #<5 digits>'"
+          },
+          {
+            "type": "not_contains",
+            "values": [
+              "guarantee",
+              "Guarantee",
+              "within 24 hours",
+              "by tomorrow"
+            ],
+            "label": "replies must not promise timelines or guarantees"
+          },
+          {
+            "type": "regex",
+            "pattern": "USD \\d+\\.\\d{2}\\b",
+            "label": "amounts must be written as 'USD 0.00'"
+          }
+        ]
+      },
+      "tags": [
+        "reply",
+        "refund"
+      ],
+      "split": "heldout"
+    },
+    {
+      "id": "acme-reply-03",
+      "prompt": "Write the reply to this customer message (ticket 60311):\n\n\"How do I reset my API key? I think it leaked.\"",
+      "verifier": {
+        "type": "all",
+        "checks": [
+          {
+            "type": "contains",
+            "values": [
+              "The Acme Support Team"
+            ],
+            "label": "replies must be signed 'The Acme Support Team'"
+          },
+          {
+            "type": "regex",
+            "pattern": "Ticket #\\d{5}\\b",
+            "label": "replies must reference the ticket as 'Ticket #<5 digits>'"
+          },
+          {
+            "type": "not_contains",
+            "values": [
+              "guarantee",
+              "Guarantee",
+              "within 24 hours",
+              "by tomorrow"
+            ],
+            "label": "replies must not promise timelines or guarantees"
+          }
+        ]
+      },
+      "tags": [
+        "reply"
+      ],
+      "split": "train"
+    },
+    {
+      "id": "acme-reply-04",
+      "prompt": "Write the reply to this customer message (ticket 47755):\n\n\"Your outage cost us a day of work. Please refund the 120 dollar monthly fee.\"",
+      "verifier": {
+        "type": "all",
+        "checks": [
+          {
+            "type": "contains",
+            "values": [
+              "The Acme Support Team"
+            ],
+            "label": "replies must be signed 'The Acme Support Team'"
+          },
+          {
+            "type": "regex",
+            "pattern": "Ticket #\\d{5}\\b",
+            "label": "replies must reference the ticket as 'Ticket #<5 digits>'"
+          },
+          {
+            "type": "not_contains",
+            "values": [
+              "guarantee",
+              "Guarantee",
+              "within 24 hours",
+              "by tomorrow"
+            ],
+            "label": "replies must not promise timelines or guarantees"
+          },
+          {
+            "type": "regex",
+            "pattern": "USD \\d+\\.\\d{2}\\b",
+            "label": "amounts must be written as 'USD 0.00'"
+          }
+        ]
+      },
+      "tags": [
+        "reply",
+        "refund"
+      ],
+      "split": "train"
+    },
+    {
+      "id": "acme-reply-05",
+      "prompt": "Write the reply to this customer message (ticket 52290):\n\n\"Can I move my account to a different region?\"",
+      "verifier": {
+        "type": "all",
+        "checks": [
+          {
+            "type": "contains",
+            "values": [
+              "The Acme Support Team"
+            ],
+            "label": "replies must be signed 'The Acme Support Team'"
+          },
+          {
+            "type": "regex",
+            "pattern": "Ticket #\\d{5}\\b",
+            "label": "replies must reference the ticket as 'Ticket #<5 digits>'"
+          },
+          {
+            "type": "not_contains",
+            "values": [
+              "guarantee",
+              "Guarantee",
+              "within 24 hours",
+              "by tomorrow"
+            ],
+            "label": "replies must not promise timelines or guarantees"
+          }
+        ]
+      },
+      "tags": [
+        "reply"
+      ],
+      "split": "heldout"
+    },
+    {
+      "id": "acme-reply-06",
+      "prompt": "Write the reply to this customer message (ticket 58841):\n\n\"The export button produces an empty CSV file.\"",
+      "verifier": {
+        "type": "all",
+        "checks": [
+          {
+            "type": "contains",
+            "values": [
+              "The Acme Support Team"
+            ],
+            "label": "replies must be signed 'The Acme Support Team'"
+          },
+          {
+            "type": "regex",
+            "pattern": "Ticket #\\d{5}\\b",
+            "label": "replies must reference the ticket as 'Ticket #<5 digits>'"
+          },
+          {
+            "type": "not_contains",
+            "values": [
+              "guarantee",
+              "Guarantee",
+              "within 24 hours",
+              "by tomorrow"
+            ],
+            "label": "replies must not promise timelines or guarantees"
+          }
+        ]
+      },
+      "tags": [
+        "reply"
+      ],
+      "split": "train"
+    },
+    {
+      "id": "acme-reply-07",
+      "prompt": "Write the reply to this customer message (ticket 44102):\n\n\"I need a refund for the 15 dollar add-on I never used.\"",
+      "verifier": {
+        "type": "all",
+        "checks": [
+          {
+            "type": "contains",
+            "values": [
+              "The Acme Support Team"
+            ],
+            "label": "replies must be signed 'The Acme Support Team'"
+          },
+          {
+            "type": "regex",
+            "pattern": "Ticket #\\d{5}\\b",
+            "label": "replies must reference the ticket as 'Ticket #<5 digits>'"
+          },
+          {
+            "type": "not_contains",
+            "values": [
+              "guarantee",
+              "Guarantee",
+              "within 24 hours",
+              "by tomorrow"
+            ],
+            "label": "replies must not promise timelines or guarantees"
+          },
+          {
+            "type": "regex",
+            "pattern": "USD \\d+\\.\\d{2}\\b",
+            "label": "amounts must be written as 'USD 0.00'"
+          }
+        ]
+      },
+      "tags": [
+        "reply",
+        "refund"
+      ],
+      "split": "train"
+    },
+    {
+      "id": "acme-reply-08",
+      "prompt": "Write the reply to this customer message (ticket 61993):\n\n\"Please delete all my data, I am leaving.\"",
+      "verifier": {
+        "type": "all",
+        "checks": [
+          {
+            "type": "contains",
+            "values": [
+              "The Acme Support Team"
+            ],
+            "label": "replies must be signed 'The Acme Support Team'"
+          },
+          {
+            "type": "regex",
+            "pattern": "Ticket #\\d{5}\\b",
+            "label": "replies must reference the ticket as 'Ticket #<5 digits>'"
+          },
+          {
+            "type": "not_contains",
+            "values": [
+              "guarantee",
+              "Guarantee",
+              "within 24 hours",
+              "by tomorrow"
+            ],
+            "label": "replies must not promise timelines or guarantees"
+          }
+        ]
+      },
+      "tags": [
+        "reply"
+      ],
+      "split": "heldout"
+    },
+    {
+      "id": "acme-reply-09",
+      "prompt": "Write the reply to this customer message (ticket 40560):\n\n\"Our team plan was billed 300 dollars instead of 250. Refund the difference please.\"",
+      "verifier": {
+        "type": "all",
+        "checks": [
+          {
+            "type": "contains",
+            "values": [
+              "The Acme Support Team"
+            ],
+            "label": "replies must be signed 'The Acme Support Team'"
+          },
+          {
+            "type": "regex",
+            "pattern": "Ticket #\\d{5}\\b",
+            "label": "replies must reference the ticket as 'Ticket #<5 digits>'"
+          },
+          {
+            "type": "not_contains",
+            "values": [
+              "guarantee",
+              "Guarantee",
+              "within 24 hours",
+              "by tomorrow"
+            ],
+            "label": "replies must not promise timelines or guarantees"
+          },
+          {
+            "type": "regex",
+            "pattern": "USD \\d+\\.\\d{2}\\b",
+            "label": "amounts must be written as 'USD 0.00'"
+          }
+        ]
+      },
+      "tags": [
+        "reply",
+        "refund"
+      ],
+      "split": "train"
+    },
+    {
+      "id": "acme-reply-10",
+      "prompt": "Write the reply to this customer message (ticket 53318):\n\n\"Webhooks stopped firing after I changed my domain.\"",
+      "verifier": {
+        "type": "all",
+        "checks": [
+          {
+            "type": "contains",
+            "values": [
+              "The Acme Support Team"
+            ],
+            "label": "replies must be signed 'The Acme Support Team'"
+          },
+          {
+            "type": "regex",
+            "pattern": "Ticket #\\d{5}\\b",
+            "label": "replies must reference the ticket as 'Ticket #<5 digits>'"
+          },
+          {
+            "type": "not_contains",
+            "values": [
+              "guarantee",
+              "Guarantee",
+              "within 24 hours",
+              "by tomorrow"
+            ],
+            "label": "replies must not promise timelines or guarantees"
+          }
+        ]
+      },
+      "tags": [
+        "reply"
+      ],
+      "split": "train"
+    },
+    {
+      "id": "acme-reply-11",
+      "prompt": "Write the reply to this customer message (ticket 49971):\n\n\"Is there a discount for nonprofits?\"",
+      "verifier": {
+        "type": "all",
+        "checks": [
+          {
+            "type": "contains",
+            "values": [
+              "The Acme Support Team"
+            ],
+            "label": "replies must be signed 'The Acme Support Team'"
+          },
+          {
+            "type": "regex",
+            "pattern": "Ticket #\\d{5}\\b",
+            "label": "replies must reference the ticket as 'Ticket #<5 digits>'"
+          },
+          {
+            "type": "not_contains",
+            "values": [
+              "guarantee",
+              "Guarantee",
+              "within 24 hours",
+              "by tomorrow"
+            ],
+            "label": "replies must not promise timelines or guarantees"
+          }
+        ]
+      },
+      "tags": [
+        "reply"
+      ],
+      "split": "heldout"
+    },
+    {
+      "id": "acme-reply-12",
+      "prompt": "Write the reply to this customer message (ticket 57702):\n\n\"I was double charged 9.99 for storage. Refund one of them.\"",
+      "verifier": {
+        "type": "all",
+        "checks": [
+          {
+            "type": "contains",
+            "values": [
+              "The Acme Support Team"
+            ],
+            "label": "replies must be signed 'The Acme Support Team'"
+          },
+          {
+            "type": "regex",
+            "pattern": "Ticket #\\d{5}\\b",
+            "label": "replies must reference the ticket as 'Ticket #<5 digits>'"
+          },
+          {
+            "type": "not_contains",
+            "values": [
+              "guarantee",
+              "Guarantee",
+              "within 24 hours",
+              "by tomorrow"
+            ],
+            "label": "replies must not promise timelines or guarantees"
+          },
+          {
+            "type": "regex",
+            "pattern": "USD \\d+\\.\\d{2}\\b",
+            "label": "amounts must be written as 'USD 0.00'"
+          }
+        ]
+      },
+      "tags": [
+        "reply",
+        "refund"
+      ],
+      "split": "train"
+    },
+    {
+      "id": "acme-reply-13",
+      "prompt": "Write the reply to this customer message (ticket 42286):\n\n\"Two-factor codes never arrive by SMS.\"",
+      "verifier": {
+        "type": "all",
+        "checks": [
+          {
+            "type": "contains",
+            "values": [
+              "The Acme Support Team"
+            ],
+            "label": "replies must be signed 'The Acme Support Team'"
+          },
+          {
+            "type": "regex",
+            "pattern": "Ticket #\\d{5}\\b",
+            "label": "replies must reference the ticket as 'Ticket #<5 digits>'"
+          },
+          {
+            "type": "not_contains",
+            "values": [
+              "guarantee",
+              "Guarantee",
+              "within 24 hours",
+              "by tomorrow"
+            ],
+            "label": "replies must not promise timelines or guarantees"
+          }
+        ]
+      },
+      "tags": [
+        "reply"
+      ],
+      "split": "train"
+    },
+    {
+      "id": "acme-reply-14",
+      "prompt": "Write the reply to this customer message (ticket 63054):\n\n\"Refund my annual plan (600 dollars), I bought it by mistake yesterday.\"",
+      "verifier": {
+        "type": "all",
+        "checks": [
+          {
+            "type": "contains",
+            "values": [
+              "The Acme Support Team"
+            ],
+            "label": "replies must be signed 'The Acme Support Team'"
+          },
+          {
+            "type": "regex",
+            "pattern": "Ticket #\\d{5}\\b",
+            "label": "replies must reference the ticket as 'Ticket #<5 digits>'"
+          },
+          {
+            "type": "not_contains",
+            "values": [
+              "guarantee",
+              "Guarantee",
+              "within 24 hours",
+              "by tomorrow"
+            ],
+            "label": "replies must not promise timelines or guarantees"
+          },
+          {
+            "type": "regex",
+            "pattern": "USD \\d+\\.\\d{2}\\b",
+            "label": "amounts must be written as 'USD 0.00'"
+          }
+        ]
+      },
+      "tags": [
+        "reply",
+        "refund"
+      ],
+      "split": "heldout"
+    },
+    {
+      "id": "acme-reply-15",
+      "prompt": "Write the reply to this customer message (ticket 45539):\n\n\"The mobile app logs me out every hour.\"",
+      "verifier": {
+        "type": "all",
+        "checks": [
+          {
+            "type": "contains",
+            "values": [
+              "The Acme Support Team"
+            ],
+            "label": "replies must be signed 'The Acme Support Team'"
+          },
+          {
+            "type": "regex",
+            "pattern": "Ticket #\\d{5}\\b",
+            "label": "replies must reference the ticket as 'Ticket #<5 digits>'"
+          },
+          {
+            "type": "not_contains",
+            "values": [
+              "guarantee",
+              "Guarantee",
+              "within 24 hours",
+              "by tomorrow"
+            ],
+            "label": "replies must not promise timelines or guarantees"
+          }
+        ]
+      },
+      "tags": [
+        "reply"
+      ],
+      "split": "train"
+    },
+    {
+      "id": "acme-triage-00",
+      "prompt": "Triage this support ticket and return JSON with category, priority and a one-sentence summary:\n\nCustomer says production API returns 500 errors for all requests since 10 minutes ago.",
+      "verifier": {
+        "type": "json",
+        "strict": true,
+        "required_keys": [
+          "category",
+          "priority",
+          "summary"
+        ],
+        "matches": {
+          "priority": "P[1-4]",
+          "category": "billing|bug|security|account|feature|question"
+        },
+        "labels": {
+          "priority": "priority must be one of P1, P2, P3, P4",
+          "category": "category must be one of billing, bug, security, account, feature, question"
+        }
+      },
+      "tags": [
+        "triage"
+      ],
+      "split": "train"
+    },
+    {
+      "id": "acme-triage-01",
+      "prompt": "Triage this support ticket and return JSON with category, priority and a one-sentence summary:\n\nUser asks how to change the color theme of the dashboard.",
+      "verifier": {
+        "type": "json",
+        "strict": true,
+        "required_keys": [
+          "category",
+          "priority",
+          "summary"
+        ],
+        "matches": {
+          "priority": "P[1-4]",
+          "category": "billing|bug|security|account|feature|question"
+        },
+        "labels": {
+          "priority": "priority must be one of P1, P2, P3, P4",
+          "category": "category must be one of billing, bug, security, account, feature, question"
+        }
+      },
+      "tags": [
+        "triage"
+      ],
+      "split": "train"
+    },
+    {
+      "id": "acme-triage-02",
+      "prompt": "Triage this support ticket and return JSON with category, priority and a one-sentence summary:\n\nInvoice PDF has the wrong company address.",
+      "verifier": {
+        "type": "json",
+        "strict": true,
+        "required_keys": [
+          "category",
+          "priority",
+          "summary"
+        ],
+        "matches": {
+          "priority": "P[1-4]",
+          "category": "billing|bug|security|account|feature|question"
+        },
+        "labels": {
+          "priority": "priority must be one of P1, P2, P3, P4",
+          "category": "category must be one of billing, bug, security, account, feature, question"
+        }
+      },
+      "tags": [
+        "triage"
+      ],
+      "split": "heldout"
+    },
+    {
+      "id": "acme-triage-03",
+      "prompt": "Triage this support ticket and return JSON with category, priority and a one-sentence summary:\n\nCustomer reports that a teammate can see projects they should not have access to.",
+      "verifier": {
+        "type": "json",
+        "strict": true,
+        "required_keys": [
+          "category",
+          "priority",
+          "summary"
+        ],
+        "matches": {
+          "priority": "P[1-4]",
+          "category": "billing|bug|security|account|feature|question"
+        },
+        "labels": {
+          "priority": "priority must be one of P1, P2, P3, P4",
+          "category": "category must be one of billing, bug, security, account, feature, question"
+        }
+      },
+      "tags": [
+        "triage"
+      ],
+      "split": "train"
+    },
+    {
+      "id": "acme-triage-04",
+      "prompt": "Triage this support ticket and return JSON with category, priority and a one-sentence summary:\n\nFeature request: dark mode for the mobile app.",
+      "verifier": {
+        "type": "json",
+        "strict": true,
+        "required_keys": [
+          "category",
+          "priority",
+          "summary"
+        ],
+        "matches": {
+          "priority": "P[1-4]",
+          "category": "billing|bug|security|account|feature|question"
+        },
+        "labels": {
+          "priority": "priority must be one of P1, P2, P3, P4",
+          "category": "category must be one of billing, bug, security, account, feature, question"
+        }
+      },
+      "tags": [
+        "triage"
+      ],
+      "split": "train"
+    },
+    {
+      "id": "acme-triage-05",
+      "prompt": "Triage this support ticket and return JSON with category, priority and a one-sentence summary:\n\nPayments page throws an error for some EU cards.",
+      "verifier": {
+        "type": "json",
+        "strict": true,
+        "required_keys": [
+          "category",
+          "priority",
+          "summary"
+        ],
+        "matches": {
+          "priority": "P[1-4]",
+          "category": "billing|bug|security|account|feature|question"
+        },
+        "labels": {
+          "priority": "priority must be one of P1, P2, P3, P4",
+          "category": "category must be one of billing, bug, security, account, feature, question"
+        }
+      },
+      "tags": [
+        "triage"
+      ],
+      "split": "heldout"
+    }
+  ]
+}
