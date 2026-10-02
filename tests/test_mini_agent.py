@@ -67,3 +67,11 @@ def test_history_is_compacted():
 def test_truncate_keeps_head_and_tail():
     t = mini.truncate("A" * 100 + "B" * 100, 50)
     assert t.startswith("A" * 25) and t.endswith("B" * 25) and "omitted" in t
+
+
+def test_echo_submit_counts_as_submission(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "task.md").write_text("x")
+    client = Scripted([reply("```bash\necho done\n```"), reply('All good.\n```bash\necho "SUBMIT"\n```')])
+    mini.main(["--model", "m", "--prompt-file", str(tmp_path / "task.md")], client=client)
+    assert "END: submitted after 1 commands" in capsys.readouterr().out and len(client.prompts) == 2

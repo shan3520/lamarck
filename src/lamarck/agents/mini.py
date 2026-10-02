@@ -39,6 +39,7 @@ The command runs in the repository root and you will see its (truncated) output.
 To edit files, use commands such as python - <<'EOF' ... EOF, sed, or cat > file <<'EOF'.
 When the task is complete, answer with the single word SUBMIT and no code block."""
 
+_ANSI = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
 _BLOCK = re.compile(r"```(?:bash|sh|shell)?\s*\n(.*?)```", flags=re.DOTALL)
 
 
@@ -70,7 +71,7 @@ def run_command(cmd: str, cwd: Path, timeout: int, bash: str | None) -> tuple[in
     argv = [bash, "-c", cmd] if bash else cmd
     try:
         p = subprocess.run(argv, shell=bash is None, cwd=cwd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=timeout)
-        return p.returncode, (p.stdout + p.stderr)
+        return p.returncode, _ANSI.sub("", p.stdout + p.stderr)
     except subprocess.TimeoutExpired:
         return 124, f"(command timed out after {timeout}s)"
 
@@ -86,7 +87,23 @@ def build_user(task: str, history: list[tuple[str, str]], keep: int, step: int, 
     return "\n\n".join(parts)
 
 
+_STATE = {"tokens": 0}
+
+
 def main(argv: list[str] | None = None, client=None) -> int:
+    """Always reports LAMARCK_TOKENS, even if the agent crashes, so spend stays visible."""
+    _STATE["tokens"] = 0
+    try:
+        return _main(argv, client)
+    except Exception:
+        import traceback
+
+        traceback.print_exc()
+        print(f"LAMARCK_TOKENS={_STATE['tokens']}")
+        return 1
+
+
+def _main(argv: list[str] | None, client) -> int:
     ap = argparse.ArgumentParser(prog="lamarck-mini-agent")
     ap.add_argument("--model", required=True)
     ap.add_argument("--provider", default="groq")
@@ -99,6 +116,11 @@ def main(argv: list[str] | None = None, client=None) -> int:
     ap.add_argument("--cmd-timeout", type=int, default=120)
     ap.add_argument("--effort", default="low")
     a = ap.parse_args(argv)
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
 
     cwd = Path.cwd()
     task = Path(a.prompt_file).read_text(encoding="utf-8")
@@ -126,11 +148,14 @@ def main(argv: list[str] | None = None, client=None) -> int:
                 return QUOTA_EXIT_CODE
             raise
         tokens += c.tokens
+        _STATE["tokens"] = tokens
         m = _BLOCK.search(c.text)
+        # Models often "submit" by running `echo SUBMIT`; treat any SUBMIT-only command as submission
+        # (observed in the first real dry run: 5 wasted steps, ~40% of the attempt's tokens).
+        if (not m and "SUBMIT" in c.text) or (m and re.fullmatch(r"(echo\s+)?[\"']?SUBMIT[\"']?", m.group(1).strip())):
+            end = "submitted"
+            break
         if not m:
-            if "SUBMIT" in c.text:
-                end = "submitted"
-                break
             history.append(("(no command)", "No ```bash block found. Reply with exactly one ```bash block, or SUBMIT."))
             continue
         cmd = m.group(1).strip()

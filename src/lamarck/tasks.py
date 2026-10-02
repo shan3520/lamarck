@@ -170,11 +170,21 @@ def _check_json(v: dict, output: str) -> Verdict:
     return Verdict(True)
 
 
+def plain_env() -> dict:
+    """Environment for test/agent subprocesses: UTF-8 I/O and no ANSI colors (they waste tokens)."""
+    import os
+
+    env = dict(os.environ)
+    env.update({"PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1", "NO_COLOR": "1", "PY_COLORS": "0", "FORCE_COLOR": "0", "TERM": "dumb"})
+    return env
+
+
 def _check_command(v: dict, workdir, timeout: int) -> Verdict:
     if workdir is None:
         return Verdict(False, "FAIL: command verifier needs a working directory")
     try:
-        proc = subprocess.run(v["cmd"], shell=True, cwd=str(workdir), capture_output=True, text=True, timeout=v.get("timeout", timeout))
+        proc = subprocess.run(v["cmd"], shell=True, cwd=str(workdir), capture_output=True, text=True, encoding="utf-8", errors="replace",
+                              timeout=v.get("timeout", timeout), env=plain_env())
     except subprocess.TimeoutExpired:
         return Verdict(False, "FAIL: verification command timed out")
     if proc.returncode == 0:

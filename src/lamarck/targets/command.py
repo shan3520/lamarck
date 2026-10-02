@@ -32,7 +32,7 @@ from pathlib import Path
 
 from ..evaluate import FatalRunError
 from ..harness import Harness
-from ..tasks import Task, verify
+from ..tasks import Task, plain_env, verify
 from .base import Trial
 
 QUOTA_EXIT_CODE = 75
@@ -85,7 +85,8 @@ class CommandTarget:
             cmd = self.agent_cmd.format(prompt_file=prompt_file.as_posix(), workdir=wd.as_posix())
             code = None
             try:
-                proc = subprocess.run(cmd, shell=True, cwd=wd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=self.timeout)
+                proc = subprocess.run(cmd, shell=True, cwd=wd, capture_output=True, text=True, encoding="utf-8", errors="replace",
+                                      timeout=self.timeout, env=plain_env())
                 out, err, code = proc.stdout, proc.stderr, proc.returncode
             except subprocess.TimeoutExpired as exc:
                 out = (exc.stdout or b"").decode("utf-8", "replace") if isinstance(exc.stdout, bytes) else (exc.stdout or "")
