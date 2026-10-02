@@ -29,7 +29,10 @@ Use `set_component` only when an existing instruction is actively wrong.
 - Each proposal may contain at most {budget} edit(s). Make proposals independent so each can be tested alone.
 - Do not repeat a hypothesis that the history shows was already rejected unless you change it materially.
 - Procedural fixes usually generalize best: state the acceptance criteria, then verify the output against them \
-before finishing."""
+before finishing.
+
+Respond with only a JSON object: {{"proposals": [{{"hypothesis": str, "cluster": str, "edits": [{{"op": str, \
+"target": str, "content": str, "rationale": str}}]}}]}}"""
 
 SCHEMA = {
     "type": "object",
@@ -102,10 +105,23 @@ def build_prompt(harness: Harness, evidence: Evidence, budget: int, history: lis
     )
 
 
-def parse_proposals(text: str, budget: int) -> list[Proposal]:
+def _load_json(text: str):
+    """Structured output gives clean JSON; gateways that don't enforce it may wrap it in prose or fences."""
     try:
-        data = json.loads(text)
+        return json.loads(text)
     except json.JSONDecodeError:
+        start, end = text.find("{"), text.rfind("}")
+        if start == -1 or end <= start:
+            return {}
+        try:
+            return json.loads(text[start : end + 1])
+        except json.JSONDecodeError:
+            return {}
+
+
+def parse_proposals(text: str, budget: int) -> list[Proposal]:
+    data = _load_json(text)
+    if not isinstance(data, dict):
         return []
     out: list[Proposal] = []
     for p in data.get("proposals", []):

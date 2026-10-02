@@ -9,6 +9,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from .env import model_id, provider
+
 DEFAULT_MODEL = "claude-opus-5-5"
 FALLBACK_BETA = "server-side-fallback-2026-07-01"
 
@@ -64,14 +66,14 @@ def complete(
     if json_schema:
         output_config["format"] = {"type": "json_schema", "schema": json_schema}
     kwargs: dict = {
-        "model": model,
+        "model": model_id(model),
         "max_tokens": max_tokens,
         "system": system,
         "messages": [{"role": "user", "content": user}],
     }
     if output_config:
         kwargs["output_config"] = output_config
-    if fallbacks:
+    if fallbacks and provider() == "anthropic":  # server-side fallbacks are an Anthropic API feature
         resp = client.beta.messages.create(betas=[FALLBACK_BETA], fallbacks="default", **kwargs)
     else:
         resp = client.messages.create(**kwargs)

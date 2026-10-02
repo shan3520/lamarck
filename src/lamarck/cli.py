@@ -16,6 +16,7 @@ from dataclasses import fields
 from pathlib import Path
 
 from .critic import Critic
+from .env import configure_gateway, load_dotenv
 from .evolve import EvolveConfig, Evolver, RunResult
 from .gitmine import MineConfig, mine_git_tasks
 from .harness import RULES, SYSTEM, Harness
@@ -149,11 +150,15 @@ def cmd_run(args) -> int:
     harness = Harness.load(base / conf["harness_dir"])
     gate = _pick(GateConfig, conf.get("gate", {}))
     ecfg = _pick(EvolveConfig, {**conf.get("evolve", {}), "gate": gate})
+    load_dotenv(base / ".env", Path.cwd() / ".env")
+    via = configure_gateway()
     target, proposer = build_target(conf["target"]), build_proposer(conf["proposer"])
 
     est = len(suite.train()) * ecfg.k_confirm + ecfg.iterations * 3 * len(suite.train()) * ecfg.k_confirm + 2 * len(suite.heldout()) * ecfg.k_heldout
     paid = conf["target"].get("type") != "simulated" or conf["proposer"].get("type") == "anthropic"
     print(f"Tasks: {len(suite.train())} train / {len(suite.heldout())} held-out. Upper-bound rollouts: ~{est}. Token cap: {ecfg.max_total_tokens}.")
+    if paid:
+        print(f"Model provider: {via}")
     if paid and not args.yes:
         reply = input("This run calls paid models / runs agents. Continue? [y/N] ").strip().lower()
         if reply not in ("y", "yes"):

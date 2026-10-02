@@ -54,6 +54,8 @@ export ANTHROPIC_API_KEY=...   # or: ant auth login
 ```bash
 .venv/Scripts/lamarck run -c examples/acme-support/lamarck.json
 ```
+**Using OpenRouter instead of an Anthropic key:** put `OPENROUTER_API_KEY=sk-or-...` in a `.env` file at the repo root (`.env` is git-ignored). Lamarck then routes the Anthropic SDK through OpenRouter's Anthropic-compatible endpoint and maps model ids (`claude-opus-5-5` becomes `anthropic/claude-opus-5.5`). Server-side refusal fallbacks are an Anthropic API feature, so they are switched off on OpenRouter.
+
 The run asks for confirmation before it spends anything. A token cap is set in `lamarck.json` (`max_total_tokens`).
 
 ### Your repo: Claude Code / Codex as the target

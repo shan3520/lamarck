@@ -58,7 +58,8 @@ def test_target_refusal_is_a_failed_trial():
     assert not trial.passed and "declined" in trial.detail
 
 
-def test_proposer_uses_structured_output_and_fallbacks():
+def test_proposer_uses_structured_output_and_fallbacks(monkeypatch):
+    monkeypatch.delenv("ANTHROPIC_BASE_URL", raising=False)
     payload = {"proposals": [{"hypothesis": "sign replies", "cluster": "FAIL: replies must be signed", "edits": [
         {"op": "append_rule", "target": "rules.md", "content": "Sign every reply as 'The Acme Support Team'.", "rationale": "unsigned replies fail"}]}]}
     client = FakeClient([response(json.dumps(payload))])
@@ -83,3 +84,32 @@ def test_parse_proposals_drops_invalid_edits_and_enforces_budget():
     out = parse_proposals(text, budget=1)
     assert [p.hypothesis for p in out] == ["a"] and len(out[0].edits) == 1
     assert parse_proposals("not json", 1) == []
+
+
+def test_parse_proposals_tolerates_prose_and_fences():
+    text = 'Here you go:\n```json\n{"proposals": [{"hypothesis": "h", "cluster": "", "edits": [{"op": "append_rule", "target": "rules.md", "content": "Sign replies.", "rationale": ""}]}]}\n```'
+    assert [p.hypothesis for p in parse_proposals(text, 1)] == ["h"]
+
+
+def test_openrouter_gateway(monkeypatch, tmp_path):
+    from lamarck import env
+
+    for k in ("ANTHROPIC_BASE_URL", "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_API_KEY", "OPENROUTER_API_KEY"):
+        monkeypatch.setenv(k, "placeholder")  # registers the original value so teardown restores it
+        monkeypatch.delenv(k)
+    (tmp_path / ".env").write_text("# comment\nOPENROUTER_API_KEY=sk-or-test\n")
+    env.load_dotenv(tmp_path / ".env")
+    assert env.configure_gateway() == "openrouter"
+    import os
+
+    assert os.environ["ANTHROPIC_BASE_URL"] == "https://openrouter.ai/api"
+    assert os.environ["ANTHROPIC_AUTH_TOKEN"] == "sk-or-test" and os.environ["ANTHROPIC_API_KEY"] == ""
+    assert env.model_id("claude-opus-5-5") == "anthropic/claude-opus-5.5"
+    assert env.model_id("claude-haiku-4-5") == "anthropic/claude-haiku-4.5"
+    assert env.model_id("anthropic/claude-sonnet-5.5") == "anthropic/claude-sonnet-5.5"
+    # fallbacks are Anthropic-only: through a gateway the proposer uses the plain endpoint
+    payload = {"proposals": []}
+    client = FakeClient([response(json.dumps(payload))])
+    LLMProposer(client=client).propose(Harness({"system.md": "x"}), Evidence([], [], [], [], [], {}), 1, [], 0)
+    assert client.messages.calls and not client.beta.messages.calls
+    assert client.messages.calls[0]["model"] == "anthropic/claude-opus-5.5"
