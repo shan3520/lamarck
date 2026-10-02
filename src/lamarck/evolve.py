@@ -46,6 +46,7 @@ class EvolveConfig:
     workers: int = 4
     seed: int = 0
     max_total_tokens: int | None = None
+    max_rollouts: int | None = None  # request cap (e.g. free-model daily quotas); held-out check is reserved
     gate: GateConfig = field(default_factory=GateConfig)
 
     def __post_init__(self) -> None:
@@ -117,7 +118,13 @@ class Evolver:
         return res.tokens / n if n else 0.0
 
     def _over_budget(self) -> bool:
-        return self.cfg.max_total_tokens is not None and self.tokens >= self.cfg.max_total_tokens
+        if self.cfg.max_total_tokens is not None and self.tokens >= self.cfg.max_total_tokens:
+            return True
+        if self.cfg.max_rollouts is not None:
+            reserve = 2 * len(self.heldout) * self.cfg.k_heldout  # always keep enough for the final held-out check
+            next_candidate = len(self.train) * self.cfg.k_confirm
+            return self.rollouts + next_candidate + reserve > self.cfg.max_rollouts
+        return False
 
     # ---- main loop ------------------------------------------------------
     def run(self) -> RunResult:
@@ -133,7 +140,7 @@ class Evolver:
 
         for it in range(cfg.iterations):
             if self._over_budget():
-                self.log(f"Token budget reached ({self.tokens} tokens); stopping early.")
+                self.log(f"Budget reached ({self.tokens} tokens, {self.rollouts} rollouts); stopping early.")
                 break
             parent = self.archive.select_parent(rng, cfg.beta)
             parent_res = self.evals[parent.id]

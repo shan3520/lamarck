@@ -56,6 +56,18 @@ export ANTHROPIC_API_KEY=...   # or: ant auth login
 ```
 **Using OpenRouter instead of an Anthropic key:** put `OPENROUTER_API_KEY=sk-or-...` in a `.env` file at the repo root (`.env` is git-ignored). Lamarck then routes the Anthropic SDK through OpenRouter's Anthropic-compatible endpoint and maps model ids (`claude-opus-5-5` becomes `anthropic/claude-opus-5.5`). Server-side refusal fallbacks are an Anthropic API feature, so they are switched off on OpenRouter.
 
+**Free models (no spend):** `examples/acme-support/lamarck.free.json` uses OpenRouter `:free` models. A weaker target (`qwen/qwen3.8-27b:free`) leaves more room to improve, and the strongest free proposer is `nvidia/nemotron-3-ultra-550b-a55b:free`. The config sets these limits:
+- `requests_per_minute: 18` (OpenRouter allows 20)
+- `max_rollouts: 900`, so a run fits in one day's quota and always reserves the held-out check
+- a stop with a clear message if the daily quota runs out
+
+OpenRouter allows **50 free requests/day**, or **1,000/day once you have bought at least $10 of credit, ever**. Free requests don't consume that credit. A meaningful run needs about 450 requests, so it needs the 1,000/day tier.
+
+Free providers may log or train on prompts, so don't send private code to `:free` models.
+```bash
+.venv/Scripts/lamarck run -c examples/acme-support/lamarck.free.json
+```
+
 The run asks for confirmation before it spends anything. A token cap is set in `lamarck.json` (`max_total_tokens`).
 
 ### Your repo: Claude Code / Codex as the target

@@ -25,13 +25,19 @@ class FatalRunError(RuntimeError):
 FATAL_STATUS = {401: "authentication failed (check the API key)", 402: "out of credits / payment required", 403: "permission denied for this model or key"}
 
 
+def _daily_quota_exhausted(exc: BaseException) -> bool:
+    return getattr(exc, "status_code", None) == 429 and "per-day" in str(exc).lower()
+
+
 def is_fatal(exc: BaseException) -> bool:
-    return isinstance(exc, FatalRunError) or getattr(exc, "status_code", None) in FATAL_STATUS
+    return isinstance(exc, FatalRunError) or getattr(exc, "status_code", None) in FATAL_STATUS or _daily_quota_exhausted(exc)
 
 
 def describe_fatal(exc: BaseException) -> str:
     if isinstance(exc, FatalRunError):
         return str(exc)
+    if _daily_quota_exhausted(exc):
+        return "daily free-model request quota exhausted (resets at 00:00 UTC) (HTTP 429)"
     return f"{FATAL_STATUS[exc.status_code]} (HTTP {exc.status_code})"
 
 

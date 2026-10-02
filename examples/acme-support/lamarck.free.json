@@ -1,0 +1,9 @@
+{
+  "harness_dir": "harness",
+  "tasks": "tasks.json",
+  "requests_per_minute": 18,
+  "target": {"type": "anthropic", "model": "qwen/qwen3.8-27b:free", "effort": null, "max_tokens": 3000},
+  "proposer": {"type": "anthropic", "model": "nvidia/nemotron-3-ultra-550b-a55b:free", "effort": null, "n_proposals": 2},
+  "evolve": {"iterations": 4, "proposals_per_iter": 2, "k_screen": 2, "k_confirm": 3, "k_heldout": 3, "workers": 3, "max_rollouts": 900, "max_total_tokens": 5000000},
+  "gate": {}
+}

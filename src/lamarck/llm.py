@@ -6,6 +6,8 @@ profile). Never pass keys on the command line or commit them.
 
 from __future__ import annotations
 
+import threading
+import time
 from dataclasses import dataclass
 from typing import Any
 
@@ -36,12 +38,43 @@ class Completion:
         return self.input_tokens + self.output_tokens
 
 
+class RateLimiter:
+    """Spaces requests evenly across all threads (free OpenRouter models allow 20/minute)."""
+
+    def __init__(self, per_minute: float | None = None):
+        self.per_minute = per_minute
+        self._next = 0.0
+        self._lock = threading.Lock()
+
+    def wait(self) -> None:
+        if not self.per_minute:
+            return
+        with self._lock:
+            now = time.monotonic()
+            slot = max(now, self._next)
+            self._next = slot + 60.0 / self.per_minute
+        if slot > now:
+            time.sleep(slot - now)
+
+
+LIMITER = RateLimiter()
+
+
+def set_rate_limit(per_minute: float | None) -> None:
+    LIMITER.per_minute = per_minute
+
+
+def is_anthropic_model(model: str) -> bool:
+    """Claude models accept `output_config` (effort, JSON schema); other gateway models may not."""
+    return "/" not in model or model.startswith("anthropic/")
+
+
 def make_client() -> Any:
     try:
         import anthropic
     except ImportError as exc:  # pragma: no cover - depends on environment
         raise LLMError("the Anthropic SDK is not installed; run: pip install 'lamarck[llm]'") from exc
-    return anthropic.Anthropic()
+    return anthropic.Anthropic(max_retries=5)  # rides out per-minute 429s with backoff
 
 
 def complete(
@@ -71,8 +104,9 @@ def complete(
         "system": system,
         "messages": [{"role": "user", "content": user}],
     }
-    if output_config:
-        kwargs["output_config"] = output_config
+    if output_config and is_anthropic_model(model):
+        kwargs["output_config"] = output_config  # non-Claude models: JSON is requested in the prompt instead
+    LIMITER.wait()
     if fallbacks and provider() == "anthropic":  # server-side fallbacks are an Anthropic API feature
         resp = client.beta.messages.create(betas=[FALLBACK_BETA], fallbacks="default", **kwargs)
     else:

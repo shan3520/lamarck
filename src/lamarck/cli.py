@@ -153,15 +153,22 @@ def cmd_run(args) -> int:
     ecfg = _pick(EvolveConfig, {**conf.get("evolve", {}), "gate": gate})
     load_dotenv(base / ".env", Path.cwd() / ".env")
     via = configure_gateway()
+    from .llm import set_rate_limit
+
+    set_rate_limit(conf.get("requests_per_minute"))
     target, proposer = build_target(conf["target"]), build_proposer(conf["proposer"])
 
-    est = len(suite.train()) * ecfg.k_confirm + ecfg.iterations * 3 * len(suite.train()) * ecfg.k_confirm + 2 * len(suite.heldout()) * ecfg.k_heldout
+    est = len(suite.train()) * ecfg.k_confirm + ecfg.iterations * (ecfg.proposals_per_iter * len(suite.train()) * ecfg.k_confirm + 1) + 2 * len(suite.heldout()) * ecfg.k_heldout
+    if ecfg.max_rollouts:
+        est = min(est, ecfg.max_rollouts + ecfg.iterations)
     paid = conf["target"].get("type") != "simulated" or conf["proposer"].get("type") == "anthropic"
-    print(f"Tasks: {len(suite.train())} train / {len(suite.heldout())} held-out. Upper-bound rollouts: ~{est}. Token cap: {ecfg.max_total_tokens}.")
+    free = all(":free" in conf[r].get("model", "") for r in ("target", "proposer") if conf[r].get("type") == "anthropic")
+    print(f"Tasks: {len(suite.train())} train / {len(suite.heldout())} held-out. Upper-bound requests: ~{est}. Token cap: {ecfg.max_total_tokens}. Rate limit: {conf.get('requests_per_minute') or 'none'}/min.")
     if paid:
         print(f"Model provider: {via}")
     if paid and not args.yes:
-        reply = input("This run calls paid models / runs agents. Continue? [y/N] ").strip().lower()
+        what = "free models (uses your daily free-request quota)" if free else "paid models / runs agents"
+        reply = input(f"This run calls {what}. Continue? [y/N] ").strip().lower()
         if reply not in ("y", "yes"):
             print("Aborted.")
             return 1
