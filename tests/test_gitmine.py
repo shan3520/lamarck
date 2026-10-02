@@ -51,17 +51,50 @@ def test_mine_git_tasks(repo):
     assert t.verifier["cmd"].endswith("test_mul.py")
 
 
-def test_command_target_runs_agent_in_worktree(repo):
+def test_command_target_runs_agent_in_snapshot(repo, tmp_path):
     task = mine_git_tasks(repo, MineConfig(test_cmd=f'"{sys.executable}" {{tests}}', heldout_fraction=0.0)).tasks[0]
     h = Harness({"system.md": "Always run the tests."})
-    # an 'agent' that solves the task by restoring the fixed source file, and checks it can read its harness
-    solver = f'git checkout {task.meta["commit"]} -- calc.py && "{sys.executable}" -c "import pathlib; print(pathlib.Path(\'CLAUDE.md\').read_text())"'
-    good = CommandTarget(agent_cmd=solver).run(h, task, 0)
+    fix = tmp_path / "fix.py"
+    fixed_source = "def add(a, b):\n    return a + b\n\n\ndef mul(a, b):\n    return a * b\n"
+    fix.write_text(
+        "import pathlib\n"
+        f"pathlib.Path('calc.py').write_text({fixed_source!r})\n"
+        "print(pathlib.Path('CLAUDE.md').read_text())\n"
+        "print('LAMARCK_TOKENS=1234')\n"
+    )
+    good = CommandTarget(agent_cmd=f'"{sys.executable}" "{fix.as_posix()}"').run(h, task, 0)
     assert good.passed, good.trace
-    assert "Always run the tests." in good.output
+    assert "Always run the tests." in good.output and good.tokens == 1234
     lazy = CommandTarget(agent_cmd="echo done").run(h, task, 0)
     assert not lazy.passed and "verification command failed" in lazy.detail
-    # worktrees are cleaned up
-    wt = subprocess.run(["git", "-C", str(repo), "worktree", "list"], capture_output=True, text=True).stdout
-    assert len(wt.strip().splitlines()) == 1
     assert not (Path(repo) / "CLAUDE.md").exists()
+
+
+def test_snapshot_has_no_git_history_to_peek_at(repo):
+    task = mine_git_tasks(repo, MineConfig(test_cmd=f'"{sys.executable}" {{tests}}', heldout_fraction=0.0)).tasks[0]
+    peek = CommandTarget(agent_cmd=f'git show {task.meta["commit"]}:calc.py > calc.py').run(Harness({}), task, 0)
+    assert not peek.passed  # the fix commit is unreachable from the snapshot
+
+
+def test_agent_quota_exit_code_is_fatal(repo):
+    from lamarck.evaluate import FatalRunError
+
+    task = mine_git_tasks(repo, MineConfig(test_cmd=f'"{sys.executable}" {{tests}}', heldout_fraction=0.0)).tasks[0]
+    with pytest.raises(FatalRunError):
+        CommandTarget(agent_cmd=f'"{sys.executable}" -c "raise SystemExit(75)"').run(Harness({}), task, 0)
+
+
+def test_validate_keeps_fail_to_pass_and_drops_already_passing(repo):
+    from dataclasses import replace
+
+    from lamarck.gitmine import validate_suite
+    from lamarck.tasks import TaskSuite
+
+    task = mine_git_tasks(repo, MineConfig(test_cmd=f'"{sys.executable}" {{tests}}', heldout_fraction=0.0)).tasks[0]
+    assert "Run them with:" in task.prompt and "test_mul.py" in task.prompt
+    already = replace(task, id="git-already", meta={**task.meta, "base": task.meta["commit"]})
+    broken = replace(task, id="git-broken", verifier={"type": "command", "cmd": f'"{sys.executable}" -c "raise SystemExit(1)"'})
+    kept, results = validate_suite(TaskSuite([task, already, broken]), log=None)
+    assert [t.id for t in kept.tasks] == [task.id]
+    notes = {v.task_id: v.note for v in results}
+    assert "already pass" in notes["git-already"] and "do not pass" in notes["git-broken"]

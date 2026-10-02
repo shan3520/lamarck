@@ -31,3 +31,20 @@ def test_init_from_existing_claude_md(tmp_path):
     src.write_text("Use pnpm, not npm.\n")
     assert main(["init", str(tmp_path / "p"), "--from", str(src)]) == 0
     assert (tmp_path / "p" / "harness" / "system.md").read_text() == "Use pnpm, not npm.\n"
+
+
+def test_resume_replays_from_saved_rollouts(tmp_path, capsys):
+    proj = tmp_path / "proj"
+    assert main(["init", str(proj)]) == 0
+    demo_suite(12, 8).save(proj / "tasks.json")
+    conf = json.loads((proj / "lamarck.json").read_text())
+    conf.update(target={"type": "simulated"}, proposer={"type": "scripted"}, evolve={"iterations": 3, "workers": 1})
+    (proj / "lamarck.json").write_text(json.dumps(conf))
+    run_dir = proj / "run"
+    main(["run", "-c", str(proj / "lamarck.json"), "--out", str(run_dir)])
+    first = json.loads((run_dir / "summary.json").read_text())
+    assert (run_dir / "trials.jsonl").exists() and (run_dir / "run_meta.json").exists()
+    capsys.readouterr()
+    main(["run", "--resume", str(run_dir)])
+    assert "saved rollouts will be replayed" in capsys.readouterr().out
+    assert json.loads((run_dir / "summary.json").read_text()) == first

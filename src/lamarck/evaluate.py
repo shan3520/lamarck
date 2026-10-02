@@ -8,10 +8,13 @@ explicit noise band.
 
 from __future__ import annotations
 
+import json
 import math
 import random
+import threading
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
+from pathlib import Path
 
 from .harness import Harness
 from .tasks import Task
@@ -86,11 +89,65 @@ def _summarize(trials: dict[str, list[Trial]], tokens: int) -> EvalResult:
     return EvalResult(rates=rates, trials=trials, k=k, tokens=tokens, infra_errors=errors)
 
 
-def evaluate(target: Target, harness: Harness, tasks: list[Task], k: int, seed: int = 0, workers: int = 4) -> EvalResult:
+class TrialCache:
+    """Append-only store of finished rollouts, keyed by (harness fingerprint, task, seed).
+
+    This is what makes multi-day runs resumable: a resumed run replays the whole search,
+    and every rollout that already happened is answered from disk at zero cost, so the
+    run continues exactly where it stopped (even halfway through an evaluation)."""
+
+    def __init__(self, path: str | Path | None = None):
+        self.path = Path(path) if path else None
+        self._data: dict[str, dict] = {}
+        self._lock = threading.Lock()
+        self.hits = 0
+        if self.path and self.path.is_file():
+            for line in self.path.read_text(encoding="utf-8").splitlines():
+                if line.strip():
+                    rec = json.loads(line)
+                    self._data[rec["key"]] = rec["trial"]
+
+    @staticmethod
+    def key(fingerprint: str, task_id: str, seed: int) -> str:
+        return f"{fingerprint}|{task_id}|{seed}"
+
+    def get(self, key: str) -> Trial | None:
+        with self._lock:
+            d = self._data.get(key)
+            if d is not None:
+                self.hits += 1
+        return Trial.from_dict(d) if d is not None else None
+
+    def put(self, key: str, trial: Trial) -> None:
+        d = trial.to_dict()
+        with self._lock:
+            self._data[key] = d
+            if self.path:
+                self.path.parent.mkdir(parents=True, exist_ok=True)
+                with self.path.open("a", encoding="utf-8") as f:
+                    f.write(json.dumps({"key": key, "trial": d}, ensure_ascii=False) + "\n")
+
+    def __len__(self) -> int:
+        return len(self._data)
+
+
+def evaluate(target: Target, harness: Harness, tasks: list[Task], k: int, seed: int = 0, workers: int = 4, cache: TrialCache | None = None) -> EvalResult:
     jobs = [(task, seed + i) for task in tasks for i in range(k)]
+    fp = harness.fingerprint()
 
     def run(job: tuple[Task, int]) -> Trial:
         task, s = job
+        key = TrialCache.key(fp, task.id, s)
+        if cache is not None:
+            hit = cache.get(key)
+            if hit is not None:
+                return hit
+        trial = _run_one(task, s)
+        if cache is not None:
+            cache.put(key, trial)
+        return trial
+
+    def _run_one(task: Task, s: int) -> Trial:
         try:
             return target.run(harness, task, s)
         except Exception as exc:  # infra failure: record it, never crash the search...

@@ -19,7 +19,7 @@ from .critic import Critic
 from .env import configure_gateway, load_dotenv
 from .evaluate import describe_fatal, is_fatal
 from .evolve import EvolveConfig, Evolver, RunResult
-from .gitmine import MineConfig, mine_git_tasks
+from .gitmine import MineConfig, mine_git_tasks, validate_suite
 from .harness import RULES, SYSTEM, Harness
 from .report import render
 from .selection import GateConfig
@@ -142,8 +142,24 @@ def cmd_mine_git(args) -> int:
     return 0
 
 
+def cmd_validate(args) -> int:
+    suite = TaskSuite.load(args.tasks)
+    print(f"Validating {len(suite.tasks)} tasks (fail before fix, pass after fix)...")
+    kept, _ = validate_suite(suite, args.max_seconds)
+    if args.heldout is not None:
+        kept = kept.assign_splits(args.heldout)
+    kept.save(args.out)
+    print(f"Kept {len(kept.tasks)} of {len(suite.tasks)} ({len(kept.train())} train / {len(kept.heldout())} held-out) -> {args.out}")
+    return 0 if kept.tasks else 1
+
+
 def cmd_run(args) -> int:
-    cfg_path = Path(args.config)
+    if args.resume:
+        meta_path = Path(args.resume) / "run_meta.json"
+        if not meta_path.is_file():
+            raise SystemExit(f"nothing to resume: {meta_path} not found")
+        args.config, args.out = json.loads(meta_path.read_text(encoding="utf-8"))["config"], args.resume
+    cfg_path = Path(args.config).resolve()
     base = cfg_path.parent
     conf = {**DEFAULT_CONFIG, **json.loads(cfg_path.read_text(encoding="utf-8"))}
     suite = TaskSuite.load(base / conf["tasks"])
@@ -178,15 +194,25 @@ def cmd_run(args) -> int:
             print("Aborted.")
             return 1
 
+    out = Path(args.out) if args.out else base / "runs" / time.strftime("%Y%m%d-%H%M%S")
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "run_meta.json").write_text(json.dumps({"config": str(cfg_path)}, indent=2), encoding="utf-8")
+    from .evaluate import TrialCache
+    from .proposers.cache import CachingProposer
+
+    cache = TrialCache(out / "trials.jsonl")
+    if len(cache):
+        print(f"Resuming: {len(cache)} saved rollouts will be replayed from disk at no cost.")
+    proposer = CachingProposer(proposer, out / "proposals.jsonl")
     critic = Critic(denylist=task_specific_literals(suite))
     try:
-        result = Evolver(target, proposer, suite, harness, ecfg, critic=critic).run()
+        result = Evolver(target, proposer, suite, harness, ecfg, critic=critic, cache=cache).run()
     except Exception as exc:
         if is_fatal(exc):
-            print(f"\nRun stopped: {describe_fatal(exc)}. Nothing was shipped; fix this and re-run.")
-            return 3
+            print(f"\nRun paused: {describe_fatal(exc)}. Progress is saved ({len(cache)} rollouts).")
+            print(f"Resume later with:  lamarck run --resume {out}")
+            return 4
         raise
-    out = Path(args.out) if args.out else base / "runs" / time.strftime("%Y%m%d-%H%M%S")
     write_run(result, out, f"Lamarck run: {cfg_path}")
     print(f"\nReport: {out / 'report.md'}\nBest harness: {out / 'best_harness.rendered.md'}")
     return 0 if result.decision.accept else 2
@@ -217,8 +243,16 @@ def main(argv: list[str] | None = None) -> int:
     m.add_argument("--heldout", type=float, default=0.3)
     m.set_defaults(fn=cmd_mine_git)
 
+    v = sub.add_parser("validate-tasks", help="keep only tasks whose tests fail before the fix and pass after it")
+    v.add_argument("tasks")
+    v.add_argument("--out", required=True)
+    v.add_argument("--max-seconds", type=float, default=120.0, help="drop tasks whose tests take longer than this")
+    v.add_argument("--heldout", type=float, default=None, help="re-assign the train/held-out split with this held-out fraction")
+    v.set_defaults(fn=cmd_validate)
+
     r = sub.add_parser("run", help="evolve the harness")
     r.add_argument("-c", "--config", default="lamarck.json")
+    r.add_argument("--resume", metavar="RUN_DIR", help="continue a paused run (e.g. after a daily quota ran out)")
     r.add_argument("--out")
     r.add_argument("-y", "--yes", action="store_true", help="don't ask before spending on paid models")
     r.set_defaults(fn=cmd_run)

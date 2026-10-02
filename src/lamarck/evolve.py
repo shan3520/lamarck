@@ -23,7 +23,7 @@ from typing import Callable
 
 from .archive import CONFIRMED, PROMOTED, REVERTED, Archive, Node
 from .critic import Critic, edit_budget
-from .evaluate import EvalResult, evaluate, noise_band
+from .evaluate import EvalResult, TrialCache, evaluate, noise_band
 from .harness import EditConflict, Harness
 from .miner import mine
 from .proposers.base import HistoryEntry, Proposer
@@ -81,6 +81,7 @@ class Evolver:
         config: EvolveConfig | None = None,
         critic: Critic | None = None,
         log: Callable[[str], None] | None = print,
+        cache: TrialCache | None = None,
     ):
         self.target = target
         self.proposer = proposer
@@ -99,6 +100,7 @@ class Evolver:
         self.rollouts = 0
         self.lines: list[str] = []
         self._log = log
+        self.cache = cache
 
     # ---- helpers --------------------------------------------------------
     def log(self, msg: str) -> None:
@@ -107,7 +109,7 @@ class Evolver:
             self._log(msg)
 
     def _eval(self, h: Harness, tasks, k: int, seed_offset: int = 0) -> EvalResult:
-        res = evaluate(self.target, h, tasks, k, seed=self.cfg.seed + seed_offset, workers=self.cfg.workers)
+        res = evaluate(self.target, h, tasks, k, seed=self.cfg.seed + seed_offset, workers=self.cfg.workers, cache=self.cache)
         self.tokens += res.tokens
         self.rollouts += sum(len(v) for v in res.trials.values())
         return res

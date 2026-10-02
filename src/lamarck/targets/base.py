@@ -24,6 +24,11 @@ class Trial:
         if self.score is None:
             self.score = 1.0 if self.passed else 0.0
 
+    @classmethod
+    def from_dict(cls, d: dict) -> "Trial":
+        return cls(d["task_id"], d["passed"], d.get("output", ""), d.get("detail", ""), d.get("trace", ""),
+                   d.get("tokens", 0), d.get("error"), d.get("score"))
+
     def to_dict(self) -> dict:
         return {
             "task_id": self.task_id,
