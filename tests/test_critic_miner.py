@@ -43,3 +43,11 @@ def test_mine_partitions_and_clusters():
     assert ev.reliable == ["solid"] and ev.variance == ["flaky"] and set(ev.walls) == {"wall1", "wall2"}
     assert ev.clusters[0].signature == "FAIL: missing signature"
     assert "Failure cluster 1" in ev.render()
+
+
+def test_miner_strips_ansi_colors():
+    colored = "\x1b[31mFAIL: tests failed\x1b[0m"
+    assert signature(colored) == signature("FAIL: tests failed")
+    trials = {"t": [Trial("t", False, detail=colored, trace="\x1b[1mE  assert x\x1b[0m")] * 2}
+    ev = mine(EvalResult(rates={"t": 0.0}, trials=trials, k=2))
+    assert "\x1b" not in ev.render()

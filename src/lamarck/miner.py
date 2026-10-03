@@ -19,12 +19,13 @@ from .targets.base import Trial
 
 RELIABLE_AT = 0.8
 _NUM = re.compile(r"\d+(?:\.\d+)?")
+_ANSI = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")  # some repos force colored test output (e.g. addopts = --color=yes)
 _HEX = re.compile(r"\b[0-9a-f]{7,40}\b")
 
 
 def signature(detail: str) -> str:
     """Normalize a failure message so the same failure on different tasks clusters together."""
-    first = (detail or "FAIL: unknown failure").strip().splitlines()[0]
+    first = _ANSI.sub("", detail or "FAIL: unknown failure").strip().splitlines()[0]
     first = _HEX.sub("<id>", first)
     first = _NUM.sub("<n>", first)
     return first[:200]
@@ -70,7 +71,7 @@ class Evidence:
 
 
 def _clip(text: str, n: int) -> str:
-    text = text or ""
+    text = _ANSI.sub("", text or "")
     return text if len(text) <= n else "…" + text[-n:]
 
 
