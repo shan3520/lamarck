@@ -55,7 +55,7 @@ seed instructions ─► run agent ─► mine failures ─► propose small edi
 |---|---|---|---|
 | Simulation (`lamarck demo`) | Every safeguard, deterministically | All safeguards behave as designed. Not evidence about real models. | `lamarck demo` |
 | Support conventions, free Groq models | Can the loop discover unstated house rules? | **SHIP**: held-out score 39.7% → 96.0%, full-pass 0/7 → 6/7, $0. On an easy benchmark I wrote. | [2026-10-02-groq-full.md](docs/results/2026-10-02-groq-full.md) |
-| Real repos (itsdangerous + python-slugify) | Does a real coding agent improve on real bug fixes? | **In progress**: a multi-day free run. The seed agent passed 2/10 attempts on day 1. | `examples/real-repo/` |
+| Real repos (itsdangerous + python-slugify) | Does a real coding agent improve on real bug fixes? | **In progress** (run 2, multi-day, free). Run 1 was stopped on day 2 after the agent tried to search the whole disk; the agent was then hardened and the experiment restarted. | `examples/real-repo/` |
 
 Earlier smoke run and the bugs it surfaced: [2026-10-02-free-smoke.md](docs/results/2026-10-02-free-smoke.md).
 
@@ -141,7 +141,8 @@ Free providers may log prompts. Don't send private code to free tiers. Full conf
 
 ## Safety and integrity
 - **No peeking at the answer:** each rollout runs in a fresh **snapshot** of the repo at the task's base commit, with **no `.git` directory**, so the agent cannot look up the fixing commit. A test checks this.
-- **Agents run real commands.** Use a sandboxed machine or container for repositories you don't trust.
+- **The built-in agent stays inside the repo.** Commands that reach outside it (`find /`, `~`, drive paths, `../..`) are blocked before they run, and a timed-out command's whole process tree is stopped. This was added after a real run, where the agent tried to search the whole disk.
+- **Agents still run real commands.** The guard is a heuristic, not a sandbox: use a sandboxed machine or container for repositories you don't trust, and for third-party agents like Claude Code.
 - **Secrets** live only in `.env`, which is git-ignored. Keys are never written to configs, logs or reports.
 - **Spend:** `run` asks before calling paid models, and `max_total_tokens` / `max_rollouts` cap a run.
 

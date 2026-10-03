@@ -36,6 +36,7 @@ Answer each turn with a brief thought followed by exactly ONE fenced block:
 <one shell command>
 ```
 The command runs in the repository root and you will see its (truncated) output.
+Work only inside this repository: do not read, list or search anything outside the current directory.
 To edit files, use commands such as python - <<'EOF' ... EOF, sed, or cat > file <<'EOF'.
 When the task is complete, answer with the single word SUBMIT and no code block."""
 
@@ -67,13 +68,39 @@ def truncate(text: str, limit: int) -> str:
     return text[:half] + f"\n... [{len(text) - limit} chars omitted] ...\n" + text[-half:]
 
 
+# Paths that point outside the working copy: the filesystem root, home, absolute drive or
+# MSYS paths, and escaping parent directories. The interpreter path is allowed explicitly.
+_OUTSIDE = re.compile(
+    r"""(?:^|[\s'"=(:;|&])(?:"""
+    r"""/(?=[\s'";|&)]|$)"""                          # bare "/" (e.g. find /, ls /)
+    r"""|/(?!dev/null\b|tmp\b)[A-Za-z0-9_.-]+"""     # absolute POSIX path (except /dev/null, /tmp)
+    r"""|~"""                                           # home directory
+    r"""|[A-Za-z]:[\\/]"""                              # Windows drive path
+    r"""|\.\./\.\."""                               # escaping two or more levels up
+    r""")"""
+)
+
+
+def outside_repo(cmd: str) -> bool:
+    import sys
+
+    allowed = {Path(sys.executable).as_posix(), str(Path(sys.executable))}
+    cleaned = cmd
+    for a in allowed:
+        cleaned = cleaned.replace(a, "PYTHON")
+    return bool(_OUTSIDE.search(cleaned))
+
+
 def run_command(cmd: str, cwd: Path, timeout: int, bash: str | None) -> tuple[int, str]:
+    from .. import proc
+
+    if outside_repo(cmd):
+        return 126, "Blocked: commands must stay inside the repository (no absolute paths, ~, or ../.. outside it)."
     argv = [bash, "-c", cmd] if bash else cmd
-    try:
-        p = subprocess.run(argv, shell=bash is None, cwd=cwd, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=timeout)
-        return p.returncode, _ANSI.sub("", p.stdout + p.stderr)
-    except subprocess.TimeoutExpired:
-        return 124, f"(command timed out after {timeout}s)"
+    res = proc.run(argv, shell=bash is None, cwd=cwd, timeout=timeout)
+    if res.timed_out:
+        return 124, f"(command timed out after {timeout}s and was stopped)"
+    return res.returncode, _ANSI.sub("", res.stdout + res.stderr)
 
 
 def build_user(task: str, history: list[tuple[str, str]], keep: int, step: int, max_steps: int) -> str:

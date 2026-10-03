@@ -198,10 +198,10 @@ def plain_env() -> dict:
 def _check_command(v: dict, workdir, timeout: int) -> Verdict:
     if workdir is None:
         return Verdict(False, "FAIL: command verifier needs a working directory")
-    try:
-        proc = subprocess.run(expand_python(v["cmd"]), shell=True, cwd=str(workdir), capture_output=True, text=True, encoding="utf-8", errors="replace",
-                              timeout=v.get("timeout", timeout), env=plain_env())
-    except subprocess.TimeoutExpired:
+    from . import proc as _proc
+
+    proc = _proc.run(expand_python(v["cmd"]), shell=True, cwd=str(workdir), timeout=v.get("timeout", timeout), env=plain_env())
+    if proc.timed_out:
         return Verdict(False, "FAIL: verification command timed out")
     if proc.returncode == 0:
         return Verdict(True)

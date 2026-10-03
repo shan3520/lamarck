@@ -30,6 +30,7 @@ import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
+from .. import proc as _proc
 from ..evaluate import FatalRunError
 from ..harness import Harness
 from ..tasks import Task, expand_python, plain_env, verify
@@ -83,14 +84,8 @@ class CommandTarget:
             prompt_file = tmp / "prompt.md"
             prompt_file.write_text(expand_python(task.prompt), encoding="utf-8")
             cmd = expand_python(self.agent_cmd).format(prompt_file=prompt_file.as_posix(), workdir=wd.as_posix())
-            code = None
-            try:
-                proc = subprocess.run(cmd, shell=True, cwd=wd, capture_output=True, text=True, encoding="utf-8", errors="replace",
-                                      timeout=self.timeout, env=plain_env())
-                out, err, code = proc.stdout, proc.stderr, proc.returncode
-            except subprocess.TimeoutExpired as exc:
-                out = (exc.stdout or b"").decode("utf-8", "replace") if isinstance(exc.stdout, bytes) else (exc.stdout or "")
-                err = "agent timed out"
+            res = _proc.run(cmd, shell=True, cwd=wd, timeout=self.timeout, env=plain_env())
+            out, err, code = res.stdout, res.stderr + ("\nagent timed out" if res.timed_out else ""), res.returncode
             if code == QUOTA_EXIT_CODE:
                 raise FatalRunError("daily model quota exhausted inside the agent (exit 75)")
             found = _TOKENS.findall(out)
