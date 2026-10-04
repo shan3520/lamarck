@@ -31,6 +31,29 @@ def signature(detail: str) -> str:
     return first[:200]
 
 
+_EXC = re.compile(r"\b([A-Z][A-Za-z]*(?:Error|Exception|Failed|Timeout))\b")
+_END = re.compile(r"^END: (.+?) after", re.MULTILINE)
+_AGENT_END = {"step limit": "agent ran out of steps", "token cap": "agent hit its token cap", "submitted": "agent submitted"}
+
+
+def trial_signature(t: Trial) -> str:
+    """Signature for clustering one failed rollout.
+
+    For test-command verifiers every failure starts with the same line, so the first line alone
+    lumps all tasks into one cluster (seen in the first real-repo run). There we add the kind of
+    error the tests hit and how the agent ended its attempt, which are the general, behavioral
+    patterns a harness can fix."""
+    sig = signature(t.detail)
+    if not sig.startswith("FAIL: verification command failed"):
+        return sig
+    detail = _ANSI.sub("", t.detail or "")
+    exc = next(iter(_EXC.findall(detail)), None)
+    kind = f"tests still fail ({exc})" if exc else "tests still fail"
+    m = _END.search(_ANSI.sub("", t.output or t.trace or ""))
+    end = _AGENT_END.get(m.group(1).strip(), m.group(1).strip()) if m else None
+    return f"FAIL: {kind}" + (f" | {end}" if end else "")
+
+
 @dataclass
 class Cluster:
     signature: str
@@ -91,7 +114,7 @@ def mine(result: EvalResult, examples_per_cluster: int = 3) -> Evidence:
             continue
         for t in trials:
             if not t.passed and t.error is None:
-                groups[signature(t.detail)].append(t)
+                groups[trial_signature(t)].append(t)
 
     clusters = []
     for sig, trials in groups.items():

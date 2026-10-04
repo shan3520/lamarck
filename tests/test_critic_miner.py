@@ -51,3 +51,21 @@ def test_miner_strips_ansi_colors():
     trials = {"t": [Trial("t", False, detail=colored, trace="\x1b[1mE  assert x\x1b[0m")] * 2}
     ev = mine(EvalResult(rates={"t": 0.0}, trials=trials, k=2))
     assert "\x1b" not in ev.render()
+
+
+def test_command_failures_cluster_by_error_and_agent_behavior():
+    from lamarck.miner import trial_signature
+
+    def t(tid, err, end):
+        detail = f"FAIL: verification command failed\nE   {err}: boom\n1 failed in 0.2s"
+        return Trial(tid, False, detail=detail, output=f"--- step 1\nEND: {end} after 12 commands\nLAMARCK_TOKENS=1", trace=detail)
+
+    a = t("a", "AssertionError", "step limit")
+    b = t("b", "AssertionError", "submitted")
+    c = t("c", "ImportError", "step limit")
+    assert trial_signature(a) == "FAIL: tests still fail (AssertionError) | agent ran out of steps"
+    assert trial_signature(b) == "FAIL: tests still fail (AssertionError) | agent submitted"
+    assert trial_signature(c) == "FAIL: tests still fail (ImportError) | agent ran out of steps"
+    ev = mine(EvalResult(rates={"a": 0.0, "b": 0.0, "c": 0.0}, trials={"a": [a], "b": [b], "c": [c]}, k=1))
+    assert len(ev.clusters) == 3
+    assert trial_signature(Trial("x", False, detail="FAIL: replies must be signed")) == "FAIL: replies must be signed"
