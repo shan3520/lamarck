@@ -230,7 +230,8 @@ def cmd_run(args) -> int:
             if args.wait and wait is not None:
                 # Rolling per-day quotas free up over time: sleep, then replay from the saved rollouts.
                 resume_at = time.strftime("%H:%M", time.localtime(time.time() + wait + 30))
-                print(f"\nQuota reached ({len(cache)} rollouts saved). Waiting {wait / 60:.0f} min, until about {resume_at}, then continuing...", flush=True)
+                print(f"\nPaused: {str(exc)[:300]}", flush=True)
+                print(f"Quota reached ({len(cache)} rollouts saved). Waiting {wait / 60:.0f} min, until about {resume_at}, then continuing...", flush=True)
                 time.sleep(wait + 30)
                 continue
             print(f"\nRun paused: {describe_fatal(exc)}. Progress is saved ({len(cache)} rollouts).")
