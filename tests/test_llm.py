@@ -250,3 +250,18 @@ def test_gemini_quota_messages():
     msg = "Quota exceeded for metric: generate_content_free_tier_requests, quotaId: GenerateRequestsPerDayPerProjectPerModel-FreeTier. Please retry in 41.5s."
     assert _DAILY.search(msg) and abs(retry_hint(msg) - 41.5) < 1e-9
     assert not _DAILY.search("quotaId: GenerateRequestsPerMinutePerProjectPerModel-FreeTier")
+
+
+def test_gemini_filtered_tool_call_is_retried(monkeypatch):
+    from lamarck import chat_compat
+    from lamarck.llm import complete
+
+    monkeypatch.setenv("GEMINI_API_KEY", "k")
+    client = chat_compat.ChatClient.for_provider("gemini")
+    replies = [
+        {"choices": [{"message": {"content": "Let me look"}, "finish_reason": "function_call_filter: MALFORMED_FUNCTION_CALL"}], "usage": {}},
+        {"choices": [{"message": {"content": "```bash\nls\n```"}, "finish_reason": "stop"}], "usage": {"prompt_tokens": 5, "completion_tokens": 3}},
+    ]
+    monkeypatch.setattr(client, "chat", lambda **kw: replies.pop(0))
+    c = complete(client, model="gemini-3.5-flash-lite", system="s", user="u", max_tokens=10)
+    assert c.text.startswith("```bash") and c.tokens == 8 and not replies

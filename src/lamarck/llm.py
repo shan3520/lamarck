@@ -108,9 +108,15 @@ def complete(
     from .chat_compat import ChatClient, strip_reasoning
 
     if isinstance(client, ChatClient):
-        LIMITER.wait()
-        data = client.chat(model=model, system=system, user=user, max_tokens=max_tokens, effort=effort, json_mode=bool(json_schema))
-        choice = (data.get("choices") or [{}])[0]
+        for _ in range(3):
+            LIMITER.wait()
+            data = client.chat(model=model, system=system, user=user, max_tokens=max_tokens, effort=effort, json_mode=bool(json_schema))
+            choice = (data.get("choices") or [{}])[0]
+            # Gemini sometimes attempts a native tool call although no tools are declared; the API then
+            # filters the reply ("function_call_filter: MALFORMED_FUNCTION_CALL", ~1 in 3 replies in a
+            # real run). That's a serving quirk, not the model's answer: ask again.
+            if "function_call_filter" not in str(choice.get("finish_reason") or ""):
+                break
         text = strip_reasoning((choice.get("message") or {}).get("content") or "")
         if not text:
             raise EmptyResponseError(f"{model} returned an empty response (finish_reason={choice.get('finish_reason')})")
