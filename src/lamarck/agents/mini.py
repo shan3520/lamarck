@@ -167,9 +167,11 @@ def _main(argv: list[str] | None, client) -> int:
             end = "token cap"
             break
         try:
-            c = complete(client, model=a.model, system=system, user=build_user(task, history, a.keep, step, a.max_steps), max_tokens=2500, effort=a.effort)
+            c = complete(client, model=a.model, system=system, user=build_user(task, history, a.keep, step, a.max_steps), max_tokens=2500, effort=a.effort,
+                         shell_tool=a.provider == "gemini")
         except EmptyResponseError:
             history.append(("(no command)", "The model returned an empty reply. Reply with one ```bash block or SUBMIT."))
+            print(f"--- step {step} (no command: empty reply)", flush=True)
             continue
         except GatewayHTTPError as exc:
             if is_fatal(exc):
@@ -187,6 +189,7 @@ def _main(argv: list[str] | None, client) -> int:
             break
         if not m:
             history.append(("(no command)", "No ```bash block found. Reply with exactly one ```bash block, or SUBMIT."))
+            print(f"--- step {step} (no command: no bash block; finish={c.stop_reason}; reply tail: {' '.join(c.text.split())[-120:]!r})", flush=True)
             continue
         cmd = m.group(1).strip()
         code, out = run_command(cmd, cwd, a.cmd_timeout, bash)

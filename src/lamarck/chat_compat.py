@@ -24,6 +24,32 @@ PROVIDERS = {
     "nvidia": ("https://integrate.api.nvidia.com/v1", "NVIDIA_API_KEY"),
 }
 
+# Offered to models that insist on native tool calls (Gemini): without it, the API filters their
+# replies as MALFORMED_FUNCTION_CALL. A call is converted back into the agent's text protocol.
+SHELL_TOOL = {
+    "type": "function",
+    "function": {
+        "name": "bash",
+        "description": "Run one shell command in the repository root and see its output.",
+        "parameters": {"type": "object", "properties": {"command": {"type": "string"}}, "required": ["command"]},
+    },
+}
+
+
+def tool_call_as_text(message: dict) -> str:
+    """Render a `bash` tool call as the agent's ```bash block protocol ('' if there is none)."""
+    for call in message.get("tool_calls") or []:
+        fn = call.get("function") or {}
+        try:
+            args = json.loads(fn.get("arguments") or "{}")
+        except json.JSONDecodeError:
+            continue
+        cmd = args.get("command") if isinstance(args, dict) else None
+        if cmd:
+            return f"```bash\n{cmd}\n```"
+    return ""
+
+
 _THINK = re.compile(r"<think>.*?</think>", flags=re.DOTALL)
 # Groq: "tokens per day (TPD)"; Gemini: quota ids like "GenerateRequestsPerDayPerProjectPerModel-FreeTier".
 _DAILY = re.compile(r"per[- ]?day|\(RPD\)|\(TPD\)", flags=re.IGNORECASE)
@@ -73,7 +99,7 @@ class ChatClient:
 
     _net_tries: int = 0
 
-    def chat(self, *, model: str, system: str, user: str, max_tokens: int, effort: str | None, json_mode: bool) -> dict:
+    def chat(self, *, model: str, system: str, user: str, max_tokens: int, effort: str | None, json_mode: bool, shell_tool: bool = False) -> dict:
         body: dict = {
             "model": model,
             "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
@@ -81,6 +107,9 @@ class ChatClient:
         }
         if json_mode:
             body["response_format"] = {"type": "json_object"}
+        if shell_tool:
+            body["tools"] = [SHELL_TOOL]
+            body["tool_choice"] = "auto"
         if "gpt-oss" in model:
             body["reasoning_effort"] = effort or "low"
             body["include_reasoning"] = False

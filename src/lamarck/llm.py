@@ -89,6 +89,10 @@ def make_client(provider_name: str = "anthropic") -> Any:
     return anthropic.Anthropic(max_retries=5)  # rides out per-minute 429s with backoff
 
 
+def _has_block(text: str) -> bool:
+    return "```" in text
+
+
 def complete(
     client: Any,
     *,
@@ -99,25 +103,29 @@ def complete(
     effort: str | None = None,
     json_schema: dict | None = None,
     fallbacks: bool = False,
+    shell_tool: bool = False,
 ) -> Completion:
     """One Messages API call. Thinking is left at the model default (adaptive on current models).
 
     `fallbacks=True` lets the API re-run a refused request on another model. Use it for the
     *proposer* only: the *target* model must stay frozen, or measurements are meaningless.
     """
-    from .chat_compat import ChatClient, strip_reasoning
+    from .chat_compat import ChatClient, strip_reasoning, tool_call_as_text
 
     if isinstance(client, ChatClient):
         for _ in range(3):
             LIMITER.wait()
-            data = client.chat(model=model, system=system, user=user, max_tokens=max_tokens, effort=effort, json_mode=bool(json_schema))
+            data = client.chat(model=model, system=system, user=user, max_tokens=max_tokens, effort=effort, json_mode=bool(json_schema), shell_tool=shell_tool)
             choice = (data.get("choices") or [{}])[0]
             # Gemini sometimes attempts a native tool call although no tools are declared; the API then
             # filters the reply ("function_call_filter: MALFORMED_FUNCTION_CALL", ~1 in 3 replies in a
             # real run). That's a serving quirk, not the model's answer: ask again.
             if "function_call_filter" not in str(choice.get("finish_reason") or ""):
                 break
-        text = strip_reasoning((choice.get("message") or {}).get("content") or "")
+        message = choice.get("message") or {}
+        text = strip_reasoning(message.get("content") or "")
+        if shell_tool and not _has_block(text):
+            text = (text + "\n" + tool_call_as_text(message)).strip()
         if not text:
             raise EmptyResponseError(f"{model} returned an empty response (finish_reason={choice.get('finish_reason')})")
         usage = data.get("usage") or {}

@@ -265,3 +265,35 @@ def test_gemini_filtered_tool_call_is_retried(monkeypatch):
     monkeypatch.setattr(client, "chat", lambda **kw: replies.pop(0))
     c = complete(client, model="gemini-3.5-flash-lite", system="s", user="u", max_tokens=10)
     assert c.text.startswith("```bash") and c.tokens == 8 and not replies
+
+
+def test_gemini_shell_tool_call_becomes_bash_block(monkeypatch):
+    from lamarck import chat_compat
+    from lamarck.llm import complete
+
+    monkeypatch.setenv("GEMINI_API_KEY", "k")
+    client = chat_compat.ChatClient.for_provider("gemini")
+    seen = {}
+
+    def fake_chat(**kw):
+        seen.update(kw)
+        return {"choices": [{"message": {"content": None, "tool_calls": [
+            {"type": "function", "function": {"name": "bash", "arguments": json.dumps({"command": "pytest -q tests/x.py"})}}]},
+            "finish_reason": "tool_calls"}], "usage": {"prompt_tokens": 7, "completion_tokens": 2}}
+
+    monkeypatch.setattr(client, "chat", fake_chat)
+    c = complete(client, model="gemini-3.5-flash-lite", system="s", user="u", max_tokens=10, shell_tool=True)
+    assert seen["shell_tool"] is True
+    assert c.text == "```bash\npytest -q tests/x.py\n```"
+
+
+def test_shell_tool_is_sent_in_request_body(monkeypatch):
+    from lamarck import chat_compat
+
+    monkeypatch.setenv("GEMINI_API_KEY", "k")
+    client = chat_compat.ChatClient.for_provider("gemini")
+    bodies = []
+    monkeypatch.setattr(client, "_post", lambda path, body: bodies.append(body) or {})
+    client.chat(model="m", system="s", user="u", max_tokens=5, effort=None, json_mode=False, shell_tool=True)
+    client.chat(model="m", system="s", user="u", max_tokens=5, effort=None, json_mode=False)
+    assert bodies[0]["tools"][0]["function"]["name"] == "bash" and "tools" not in bodies[1]
