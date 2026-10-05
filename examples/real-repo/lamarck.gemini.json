@@ -1,0 +1,28 @@
+{
+  "harness_dir": "harness",
+  "tasks": "tasks.json",
+  "requests_per_minute": 20,
+  "target": {
+    "type": "command",
+    "harness_file": "AGENT.md",
+    "timeout": 1500,
+    "agent_cmd": "{python} -m lamarck.agents.mini --provider gemini --model gemini-3.5-flash-lite --prompt-file {prompt_file}"
+  },
+  "proposer": {
+    "type": "llm",
+    "provider": "groq",
+    "model": "openai/gpt-oss-120b",
+    "effort": "medium",
+    "n_proposals": 1
+  },
+  "evolve": {
+    "iterations": 3,
+    "proposals_per_iter": 1,
+    "k_screen": 1,
+    "k_confirm": 2,
+    "k_heldout": 2,
+    "workers": 1,
+    "max_total_tokens": 1500000
+  },
+  "gate": {}
+}
