@@ -207,6 +207,7 @@ def cmd_run(args) -> int:
     critic = Critic(denylist=task_specific_literals(suite))
     from .chat_compat import retry_hint
 
+    stalled, last_saved = 0, -1
     while True:
         try:
             result = Evolver(target, proposer, suite, harness, ecfg, critic=critic, cache=cache).run()
@@ -215,7 +216,16 @@ def cmd_run(args) -> int:
             if not is_fatal(exc):
                 raise
             wait = retry_hint(str(exc))
-            if args.wait and wait is not None and wait <= args.max_wait * 3600:
+            # The provider's hint only says when the *next request* fits. If waiting that long
+            # finished no rollout, a partial attempt was wasted: back off (20, 40, 80 min ...) so the
+            # rolling window frees enough quota for whole attempts.
+            stalled = stalled + 1 if len(cache) == last_saved else 0
+            last_saved = len(cache)
+            if wait is not None and stalled:
+                wait = max(wait, 1200 * 2 ** (stalled - 1))
+            if wait is not None:
+                wait = min(wait, args.max_wait * 3600)
+            if args.wait and wait is not None:
                 # Rolling per-day quotas free up over time: sleep, then replay from the saved rollouts.
                 resume_at = time.strftime("%H:%M", time.localtime(time.time() + wait + 30))
                 print(f"\nQuota reached ({len(cache)} rollouts saved). Waiting {wait / 60:.0f} min, until about {resume_at}, then continuing...", flush=True)

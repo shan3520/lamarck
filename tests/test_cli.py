@@ -79,3 +79,32 @@ def test_run_wait_sleeps_through_quota_and_finishes(tmp_path, monkeypatch, capsy
     out = capsys.readouterr().out
     assert code in (0, 2) and "Waiting 2 min" in out and slept == [120.0]
     assert (proj / "run" / "report.md").exists()
+
+
+def test_run_wait_backs_off_when_quota_waits_finish_nothing(tmp_path, monkeypatch, capsys):
+    import time as _time
+
+    from lamarck import cli
+    from lamarck.evaluate import FatalRunError
+    from lamarck.sim import SimulatedTarget
+
+    class Starved(SimulatedTarget):
+        hits = 0
+
+        def run(self, harness, task, seed):
+            if Starved.hits < 3:  # the first three tries hit the quota before anything is saved
+                Starved.hits += 1
+                raise FatalRunError("quota: Please try again in 2m0s.")
+            return super().run(harness, task, seed)
+
+    monkeypatch.setattr(cli, "build_target", lambda spec: Starved())
+    slept = []
+    monkeypatch.setattr(_time, "sleep", lambda s: slept.append(s))
+    proj = tmp_path / "proj"
+    main(["init", str(proj)])
+    demo_suite(12, 8).save(proj / "tasks.json")
+    conf = json.loads((proj / "lamarck.json").read_text())
+    conf.update(target={"type": "simulated"}, proposer={"type": "scripted"}, evolve={"iterations": 1, "workers": 1})
+    (proj / "lamarck.json").write_text(json.dumps(conf))
+    main(["run", "-c", str(proj / "lamarck.json"), "--out", str(proj / "run"), "--wait"])
+    assert slept == [150.0, 1230.0, 2430.0]  # provider hint, then 20 and 40 minutes (+30 s margin)
