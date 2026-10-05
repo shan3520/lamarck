@@ -87,7 +87,7 @@ class CommandTarget:
             res = _proc.run(cmd, shell=True, cwd=wd, timeout=self.timeout, env=plain_env())
             out, err, code = res.stdout, res.stderr + ("\nagent timed out" if res.timed_out else ""), res.returncode
             if code == QUOTA_EXIT_CODE:
-                raise FatalRunError("daily model quota exhausted inside the agent (exit 75)")
+                raise FatalRunError("daily model quota exhausted inside the agent (exit 75): " + " ".join(err.split())[-400:])
             found = _TOKENS.findall(out)
             tokens = int(found[-1]) if found else 0
             v = verify(task, out, workdir=wd)

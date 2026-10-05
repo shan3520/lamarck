@@ -49,6 +49,8 @@ Evolves the harness.
 | `--out` | Run directory (default `runs/<timestamp>` next to the config) |
 | `--resume RUN_DIR` | Continue a paused run. Config and output come from `RUN_DIR/run_meta.json` |
 | `-y, --yes` | Don't ask for confirmation before calling models |
+| `--wait` | When a rolling daily quota is reached, wait until it frees up and continue, instead of pausing |
+| `--max-wait` | With `--wait`: longest single wait, in hours (default 12) |
 
 `.env` is loaded from the config's folder and the current folder. Variables already set in the environment take precedence.
 
@@ -176,6 +178,7 @@ Paths are relative to the config file.
 | `--max-tokens-total` | 30000 | Token cap per attempt |
 | `--obs-chars` | 1500 | Command output kept per step (head + tail) |
 | `--keep` | 4 | Recent steps kept in full; older ones are summarized |
+| `--quota-wait` | 600 | Seconds per attempt the agent may spend waiting out a rolling daily quota (Groq says "try again in 2m51s") instead of abandoning the attempt |
 | `--cmd-timeout` | 120 | Seconds per command; on timeout the whole process tree is stopped |
 
 Commands that reach outside the working directory (a bare `/`, absolute paths other than `/dev/null` and `/tmp`, `~`, drive paths like `C:\`, or `../..`) are blocked with exit code 126 and a message to the agent. The interpreter path from `{python}` is allowed.

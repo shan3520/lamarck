@@ -30,6 +30,21 @@ class GatewayHTTPError(RuntimeError):
     def __init__(self, status_code: int, message: str):
         super().__init__(f"HTTP {status_code}: {message}")
         self.status_code = status_code
+        self.retry_in = retry_hint(message)
+
+
+_HINT = re.compile(r"try again in\s*(?:(\d+)h)?\s*(?:(\d+)m(?!s))?\s*(?:([\d.]+)s)?", flags=re.IGNORECASE)
+
+
+def retry_hint(text: str) -> float | None:
+    """Seconds until a quota frees up, from messages like 'Please try again in 2m51.9s'.
+
+    Groq's per-day limits are a rolling 24-hour window, so this is often minutes, not hours."""
+    m = _HINT.search(text or "")
+    if not m or not any(m.groups()):
+        return None
+    h, mins, secs = m.groups()
+    return int(h or 0) * 3600 + int(mins or 0) * 60 + float(secs or 0)
 
 
 @dataclass
@@ -38,6 +53,7 @@ class ChatClient:
     base_url: str
     api_key: str
     max_retries: int = 8
+    quota_wait: float = 0.0  # seconds this client may spend waiting out per-day limits before giving up
     timeout: float = 180.0
 
     @classmethod
@@ -67,7 +83,9 @@ class ChatClient:
 
     def _post(self, path: str, body: dict) -> dict:
         data = json.dumps(body).encode()
-        for attempt in range(self.max_retries + 1):
+        attempt = -1
+        while attempt < self.max_retries:
+            attempt += 1
             req = urllib.request.Request(
                 self.base_url + path,
                 data=data,
@@ -85,6 +103,13 @@ class ChatClient:
                     time.sleep(min(60, 2**attempt))
                     continue
                 if exc.code == 429:
+                    wait = retry_hint(msg)
+                    if wait is not None and wait + 5 <= self.quota_wait:
+                        # rolling per-day window: tokens free up as old usage ages out; wait instead of failing
+                        self.quota_wait -= wait + 5
+                        time.sleep(wait + 5)
+                        attempt -= 1  # waiting out the quota doesn't use up a retry
+                        continue
                     raise GatewayHTTPError(429, "daily quota (per-day limit) reached: " + msg) from None
                 raise GatewayHTTPError(exc.code, msg) from None
             except (urllib.error.URLError, TimeoutError) as exc:

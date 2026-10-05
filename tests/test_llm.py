@@ -187,3 +187,57 @@ def test_groq_requires_key(monkeypatch):
     monkeypatch.delenv("GROQ_API_KEY", raising=False)
     with pytest.raises(LLMError, match="GROQ_API_KEY"):
         make_client("groq")
+
+
+def test_retry_hint_parsing():
+    from lamarck.chat_compat import retry_hint
+
+    assert abs(retry_hint("Please try again in 2m51.936s. Need more tokens?") - 171.936) < 1e-6
+    assert retry_hint("try again in 1h2m3s") == 3723
+    assert retry_hint("try again in 12.5s") == 12.5
+    assert retry_hint("try again in 45ms") is None or retry_hint("try again in 45ms") < 1
+    assert retry_hint("no hint here") is None
+
+
+def test_groq_client_waits_out_short_daily_quota(monkeypatch):
+    import io
+    import urllib.error
+
+    from lamarck import chat_compat
+    from lamarck.llm import complete, make_client
+
+    monkeypatch.setenv("GROQ_API_KEY", "gsk_test")
+    client = make_client("groq")
+    client.quota_wait = 600
+    slept = []
+    monkeypatch.setattr(chat_compat.time, "sleep", lambda s: slept.append(s))
+
+    class Resp(io.BytesIO):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    daily = b"Rate limit reached on tokens per day (TPD): Limit 200000, Used 199579. Please try again in 2m51.9s."
+    replies = [urllib.error.HTTPError("u", 429, "rate", {}, io.BytesIO(daily)),
+               Resp(json.dumps({"choices": [{"message": {"content": "ok"}, "finish_reason": "stop"}], "usage": {}}).encode())]
+
+    def fake(req, timeout):
+        r = replies.pop(0)
+        if isinstance(r, Exception):
+            raise r
+        return r
+
+    monkeypatch.setattr(chat_compat.urllib.request, "urlopen", fake)
+    assert complete(client, model="m", system="s", user="u", max_tokens=10).text == "ok"
+    assert slept and 170 < slept[0] < 190 and client.quota_wait < 600
+
+    client.quota_wait = 10  # too little budget left: give up with a fatal error that carries the hint
+    monkeypatch.setattr(chat_compat.urllib.request, "urlopen", lambda req, timeout: (_ for _ in ()).throw(
+        urllib.error.HTTPError("u", 429, "rate", {}, io.BytesIO(daily))))
+    try:
+        complete(client, model="m", system="s", user="u", max_tokens=10)
+        raise AssertionError("expected an error")
+    except chat_compat.GatewayHTTPError as exc:
+        assert exc.status_code == 429 and 170 < exc.retry_in < 175

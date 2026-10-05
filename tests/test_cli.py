@@ -48,3 +48,34 @@ def test_resume_replays_from_saved_rollouts(tmp_path, capsys):
     main(["run", "--resume", str(run_dir)])
     assert "saved rollouts will be replayed" in capsys.readouterr().out
     assert json.loads((run_dir / "summary.json").read_text()) == first
+
+
+def test_run_wait_sleeps_through_quota_and_finishes(tmp_path, monkeypatch, capsys):
+    import time as _time
+
+    from lamarck import cli
+    from lamarck.evaluate import FatalRunError
+    from lamarck.sim import SimulatedTarget
+
+    class QuotaOnce(SimulatedTarget):
+        hits = 0
+
+        def run(self, harness, task, seed):
+            if QuotaOnce.hits == 0 and seed == 1:
+                QuotaOnce.hits += 1
+                raise FatalRunError("daily model quota exhausted: Please try again in 1m30s.")
+            return super().run(harness, task, seed)
+
+    monkeypatch.setattr(cli, "build_target", lambda spec: QuotaOnce())
+    slept = []
+    monkeypatch.setattr(_time, "sleep", lambda s: slept.append(s))
+    proj = tmp_path / "proj"
+    main(["init", str(proj)])
+    demo_suite(12, 8).save(proj / "tasks.json")
+    conf = json.loads((proj / "lamarck.json").read_text())
+    conf.update(target={"type": "simulated"}, proposer={"type": "scripted"}, evolve={"iterations": 2, "workers": 1})
+    (proj / "lamarck.json").write_text(json.dumps(conf))
+    code = main(["run", "-c", str(proj / "lamarck.json"), "--out", str(proj / "run"), "--wait"])
+    out = capsys.readouterr().out
+    assert code in (0, 2) and "Waiting 2 min" in out and slept == [120.0]
+    assert (proj / "run" / "report.md").exists()

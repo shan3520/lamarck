@@ -130,6 +130,11 @@ lamarck run --resume examples/real-repo/runs/run-1 --yes
 ```
 Resuming replays the search from disk at zero cost and continues exactly where it stopped. A test checks that a paused-and-resumed run ends identical to an uninterrupted one.
 
+Groq's per-day limit is a **rolling 24-hour window**: tokens free up as usage from a day ago ages out, and Groq says how long to wait ("try again in 2m51s"). With `--wait`, one launch waits through quota limits and runs to completion over several days on its own, with no daily resumes:
+```bash
+lamarck run --resume examples/real-repo/runs/run-2 --yes --wait
+```
+
 ## Model providers
 | Provider | Set in `.env` | Notes |
 |---|---|---|

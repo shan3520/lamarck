@@ -142,6 +142,7 @@ def _main(argv: list[str] | None, client) -> int:
     ap.add_argument("--keep", type=int, default=4)
     ap.add_argument("--cmd-timeout", type=int, default=120)
     ap.add_argument("--effort", default="low")
+    ap.add_argument("--quota-wait", type=float, default=600.0, help="seconds per attempt the agent may wait out a rolling daily quota")
     a = ap.parse_args(argv)
     for stream in (sys.stdout, sys.stderr):
         try:
@@ -156,6 +157,8 @@ def _main(argv: list[str] | None, client) -> int:
     system = (harness.strip() + "\n\n" + PROTOCOL) if harness.strip() else PROTOCOL
     bash = find_bash()
     client = client or make_client(a.provider)
+    if hasattr(client, "quota_wait"):
+        client.quota_wait = a.quota_wait  # finish the attempt across short quota waits instead of abandoning it
     history: list[tuple[str, str]] = []
     tokens = 0
     end = "step limit"

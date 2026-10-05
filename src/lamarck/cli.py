@@ -205,14 +205,25 @@ def cmd_run(args) -> int:
         print(f"Resuming: {len(cache)} saved rollouts will be replayed from disk at no cost.")
     proposer = CachingProposer(proposer, out / "proposals.jsonl")
     critic = Critic(denylist=task_specific_literals(suite))
-    try:
-        result = Evolver(target, proposer, suite, harness, ecfg, critic=critic, cache=cache).run()
-    except Exception as exc:
-        if is_fatal(exc):
+    from .chat_compat import retry_hint
+
+    while True:
+        try:
+            result = Evolver(target, proposer, suite, harness, ecfg, critic=critic, cache=cache).run()
+            break
+        except Exception as exc:
+            if not is_fatal(exc):
+                raise
+            wait = retry_hint(str(exc))
+            if args.wait and wait is not None and wait <= args.max_wait * 3600:
+                # Rolling per-day quotas free up over time: sleep, then replay from the saved rollouts.
+                resume_at = time.strftime("%H:%M", time.localtime(time.time() + wait + 30))
+                print(f"\nQuota reached ({len(cache)} rollouts saved). Waiting {wait / 60:.0f} min, until about {resume_at}, then continuing...", flush=True)
+                time.sleep(wait + 30)
+                continue
             print(f"\nRun paused: {describe_fatal(exc)}. Progress is saved ({len(cache)} rollouts).")
-            print(f"Resume later with:  lamarck run --resume {out}")
+            print(f"Resume later with:  lamarck run --resume {out}" + (" --wait" if not args.wait else ""))
             return 4
-        raise
     write_run(result, out, f"Lamarck run: {cfg_path}")
     print(f"\nReport: {out / 'report.md'}\nBest harness: {out / 'best_harness.rendered.md'}")
     return 0 if result.decision.accept else 2
@@ -255,6 +266,8 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--resume", metavar="RUN_DIR", help="continue a paused run (e.g. after a daily quota ran out)")
     r.add_argument("--out")
     r.add_argument("-y", "--yes", action="store_true", help="don't ask before spending on paid models")
+    r.add_argument("--wait", action="store_true", help="when a rolling daily quota is reached, wait for it and continue instead of pausing")
+    r.add_argument("--max-wait", type=float, default=12.0, help="with --wait: longest single wait in hours (default 12)")
     r.set_defaults(fn=cmd_run)
 
     args = p.parse_args(argv)
