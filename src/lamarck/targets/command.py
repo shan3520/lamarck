@@ -37,6 +37,7 @@ from ..tasks import Task, expand_python, plain_env, verify
 from .base import Trial
 
 QUOTA_EXIT_CODE = 75
+AGENT_CRASH_EXIT_CODE = 70
 _TOKENS = re.compile(r"^LAMARCK_TOKENS=(\d+)\s*$", flags=re.MULTILINE)
 
 
@@ -87,7 +88,10 @@ class CommandTarget:
             res = _proc.run(cmd, shell=True, cwd=wd, timeout=self.timeout, env=plain_env())
             out, err, code = res.stdout, res.stderr + ("\nagent timed out" if res.timed_out else ""), res.returncode
             if code == QUOTA_EXIT_CODE:
-                raise FatalRunError("daily model quota exhausted inside the agent (exit 75): " + " ".join(err.split())[-400:])
+                raise FatalRunError("model provider unavailable inside the agent (exit 75; quota or network): " + " ".join(err.split())[-400:])
+            if code == AGENT_CRASH_EXIT_CODE:  # a bug in the agent program, not the model failing the task
+                return Trial(task.id, False, detail="FAIL: infrastructure error (agent crashed)", trace=err[-2000:],
+                             error="agent crashed: " + " ".join(err.split())[-300:])
             found = _TOKENS.findall(out)
             tokens = int(found[-1]) if found else 0
             v = verify(task, out, workdir=wd)

@@ -241,3 +241,12 @@ def test_groq_client_waits_out_short_daily_quota(monkeypatch):
         raise AssertionError("expected an error")
     except chat_compat.GatewayHTTPError as exc:
         assert exc.status_code == 429 and 170 < exc.retry_in < 175
+
+
+def test_gemini_quota_messages():
+    from lamarck.chat_compat import _DAILY, PROVIDERS, retry_hint
+
+    assert "gemini" in PROVIDERS and "nvidia" in PROVIDERS
+    msg = "Quota exceeded for metric: generate_content_free_tier_requests, quotaId: GenerateRequestsPerDayPerProjectPerModel-FreeTier. Please retry in 41.5s."
+    assert _DAILY.search(msg) and abs(retry_hint(msg) - 41.5) < 1e-9
+    assert not _DAILY.search("quotaId: GenerateRequestsPerMinutePerProjectPerModel-FreeTier")

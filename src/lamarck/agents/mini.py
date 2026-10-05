@@ -9,7 +9,7 @@ Each turn the model answers with exactly one ```bash block (run in the working
 directory) or the word SUBMIT. Built for free tiers: few steps, short observations,
 only the most recent exchanges kept in full, and a hard token cap per attempt.
 
-Exit codes: 0 normal; 75 the provider's daily quota is exhausted (the caller stops and saves).
+Exit codes: 0 normal; 75 the model provider is unavailable (daily quota or network outage: the caller pauses and saves); 70 the agent program crashed (recorded as an infrastructure error, never as a task failure).
 """
 
 from __future__ import annotations
@@ -127,7 +127,7 @@ def main(argv: list[str] | None = None, client=None) -> int:
 
         traceback.print_exc()
         print(f"LAMARCK_TOKENS={_STATE['tokens']}")
-        return 1
+        return 70  # agent crash: recorded as an infrastructure error, never as the model failing the task
 
 
 def _main(argv: list[str] | None, client) -> int:

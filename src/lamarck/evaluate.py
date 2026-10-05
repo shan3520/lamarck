@@ -33,13 +33,20 @@ def _daily_quota_exhausted(exc: BaseException) -> bool:
     return getattr(exc, "status_code", None) == 429 and ("per-day" in msg or "per day" in msg)
 
 
+def _network_down(exc: BaseException) -> bool:
+    return getattr(exc, "status_code", None) == 0 and "network" in str(exc).lower()
+
+
 def is_fatal(exc: BaseException) -> bool:
-    return isinstance(exc, FatalRunError) or getattr(exc, "status_code", None) in FATAL_STATUS or _daily_quota_exhausted(exc)
+    return (isinstance(exc, FatalRunError) or getattr(exc, "status_code", None) in FATAL_STATUS
+            or _daily_quota_exhausted(exc) or _network_down(exc))
 
 
 def describe_fatal(exc: BaseException) -> str:
     if isinstance(exc, FatalRunError):
         return str(exc)
+    if _network_down(exc):
+        return "network unavailable (no internet connection?)"
     if _daily_quota_exhausted(exc):
         return "daily free-model request quota exhausted (resets at 00:00 UTC) (HTTP 429)"
     return f"{FATAL_STATUS[exc.status_code]} (HTTP {exc.status_code})"

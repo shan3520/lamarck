@@ -20,10 +20,13 @@ from dataclasses import dataclass
 
 PROVIDERS = {
     "groq": ("https://api.groq.com/openai/v1", "GROQ_API_KEY"),
+    "gemini": ("https://generativelanguage.googleapis.com/v1beta/openai", "GEMINI_API_KEY"),
+    "nvidia": ("https://integrate.api.nvidia.com/v1", "NVIDIA_API_KEY"),
 }
 
 _THINK = re.compile(r"<think>.*?</think>", flags=re.DOTALL)
-_DAILY = re.compile(r"per[- ]day|\(RPD\)|\(TPD\)", flags=re.IGNORECASE)
+# Groq: "tokens per day (TPD)"; Gemini: quota ids like "GenerateRequestsPerDayPerProjectPerModel-FreeTier".
+_DAILY = re.compile(r"per[- ]?day|\(RPD\)|\(TPD\)", flags=re.IGNORECASE)
 
 
 class GatewayHTTPError(RuntimeError):
@@ -33,7 +36,8 @@ class GatewayHTTPError(RuntimeError):
         self.retry_in = retry_hint(message)
 
 
-_HINT = re.compile(r"try again in\s*(?:(\d+)h)?\s*(?:(\d+)m(?!s))?\s*(?:([\d.]+)s)?", flags=re.IGNORECASE)
+# Groq: "Please try again in 2m51.9s"; Gemini: "Please retry in 41.5s".
+_HINT = re.compile(r"(?:try again|retry) in\s*(?:(\d+)h)?\s*(?:(\d+)m(?!s))?\s*(?:([\d.]+)s)?", flags=re.IGNORECASE)
 
 
 def retry_hint(text: str) -> float | None:
@@ -54,6 +58,7 @@ class ChatClient:
     api_key: str
     max_retries: int = 8
     quota_wait: float = 0.0  # seconds this client may spend waiting out per-day limits before giving up
+    network_wait: float = 600.0  # seconds to keep retrying through a network outage before giving up
     timeout: float = 180.0
 
     @classmethod
@@ -66,6 +71,8 @@ class ChatClient:
             raise LLMError(f"{env_var} is not set; put it in the .env file next to lamarck.json (never in config or chat)")
         return cls(provider, base, key)
 
+    _net_tries: int = 0
+
     def chat(self, *, model: str, system: str, user: str, max_tokens: int, effort: str | None, json_mode: bool) -> dict:
         body: dict = {
             "model": model,
@@ -77,8 +84,10 @@ class ChatClient:
         if "gpt-oss" in model:
             body["reasoning_effort"] = effort or "low"
             body["include_reasoning"] = False
-        elif "qwen3" in model:
+        elif "qwen3" in model and self.provider == "groq":
             body["reasoning_format"] = "hidden"
+        elif self.provider == "gemini" and effort:
+            body["reasoning_effort"] = effort
         return self._post("/chat/completions", body)
 
     def _post(self, path: str, body: dict) -> dict:
@@ -112,9 +121,16 @@ class ChatClient:
                         continue
                     raise GatewayHTTPError(429, "daily quota (per-day limit) reached: " + msg) from None
                 raise GatewayHTTPError(exc.code, msg) from None
-            except (urllib.error.URLError, TimeoutError) as exc:
-                if attempt < self.max_retries:
-                    time.sleep(min(60, 2**attempt))
+            except (urllib.error.URLError, TimeoutError, ConnectionError) as exc:
+                # Network outage (seen in a real run: DNS failures). Keep retrying for a while without
+                # using up normal retries; if it persists, raise status 0, which callers treat as
+                # fatal ("pause the run"), never as the agent failing the task.
+                pause = min(60.0, 5.0 * 2 ** min(self._net_tries, 4))
+                if pause <= self.network_wait:
+                    self.network_wait -= pause
+                    self._net_tries += 1
+                    time.sleep(pause)
+                    attempt -= 1
                     continue
                 raise GatewayHTTPError(0, f"network error: {exc}") from None
         raise GatewayHTTPError(0, "retries exhausted")

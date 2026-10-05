@@ -101,3 +101,47 @@ def test_tiny_heldout_sample_is_inconclusive_not_ship():
     cfg = EvolveConfig(iterations=6, workers=1, k_heldout=1)
     r = Evolver(SimulatedTarget(), ScriptedProposer(), demo_suite(24, 3), seed_harness(), cfg, log=None).run()
     assert not r.decision.accept and r.decision.reason.startswith("inconclusive")
+
+
+def test_network_outage_is_retried_then_fatal_not_a_task_failure(monkeypatch):
+    import urllib.error
+
+    from lamarck import chat_compat
+    from lamarck.evaluate import describe_fatal, is_fatal
+
+    monkeypatch.setenv("GROQ_API_KEY", "gsk_test")
+    client = chat_compat.ChatClient.for_provider("groq")
+    client.network_wait = 30  # allows a few short retries
+    slept = []
+    monkeypatch.setattr(chat_compat.time, "sleep", lambda s: slept.append(s))
+
+    def down(req, timeout):
+        raise urllib.error.URLError("[Errno 11001] getaddrinfo failed")
+
+    monkeypatch.setattr(chat_compat.urllib.request, "urlopen", down)
+    with pytest.raises(chat_compat.GatewayHTTPError) as ei:
+        client.chat(model="m", system="s", user="u", max_tokens=5, effort=None, json_mode=False)
+    assert slept and sum(slept) <= 30
+    assert is_fatal(ei.value) and "network unavailable" in describe_fatal(ei.value)
+
+
+def test_agent_crash_is_an_infra_error(tmp_path):
+    import subprocess
+
+    from lamarck.gitmine import MineConfig, mine_git_tasks
+    from lamarck.targets.command import CommandTarget
+
+    r = tmp_path / "repo"
+    r.mkdir()
+    for args in (["init", "-q"], ["config", "user.email", "t@e.com"], ["config", "user.name", "t"]):
+        subprocess.run(["git", "-C", str(r), *args], check=True)
+    (r / "a.py").write_text("x = 1\n")
+    subprocess.run(["git", "-C", str(r), "add", "."], check=True)
+    subprocess.run(["git", "-C", str(r), "commit", "-qm", "init"], check=True)
+    (r / "a.py").write_text("x = 2\n")
+    (r / "test_a.py").write_text("import a\nassert a.x == 2\n")
+    subprocess.run(["git", "-C", str(r), "add", "."], check=True)
+    subprocess.run(["git", "-C", str(r), "commit", "-qm", "x=2"], check=True)
+    task = mine_git_tasks(r, MineConfig(test_cmd="{python} {tests}", heldout_fraction=0.0)).tasks[0]
+    trial = CommandTarget(agent_cmd='{python} -c "raise SystemExit(70)"').run(Harness({}), task, 0)
+    assert trial.error and "crashed" in trial.error and not trial.passed

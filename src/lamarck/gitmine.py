@@ -82,7 +82,7 @@ def mine_git_tasks(repo: str | Path, cfg: MineConfig | None = None) -> TaskSuite
         if not added_or_modified or not src or len(changes) > cfg.max_files_changed:
             continue
         tests = sorted(added_or_modified)
-        test_cmd = cfg.test_cmd.format(tests=" ".join(tests))
+        test_cmd = cfg.test_cmd.replace("{tests}", " ".join(tests))  # not .format(): {python} must survive
         prompt = (
             f"{subject.strip()}\n\n{body.strip()}\n\n"
             f"Implement this change in the repository. These tests describe the expected behavior and must pass "
