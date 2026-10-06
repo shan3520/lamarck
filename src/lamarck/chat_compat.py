@@ -22,6 +22,8 @@ PROVIDERS = {
     "groq": ("https://api.groq.com/openai/v1", "GROQ_API_KEY"),
     "gemini": ("https://generativelanguage.googleapis.com/v1beta/openai", "GEMINI_API_KEY"),
     "nvidia": ("https://integrate.api.nvidia.com/v1", "NVIDIA_API_KEY"),
+    "mistral": ("https://api.mistral.ai/v1", "MISTRAL_API_KEY"),
+    "tokenharbor": ("https://tokenharbor.ai/v1", "TOKENHARBOR_API_KEY"),
 }
 
 # Offered to models that insist on native tool calls (Gemini): without it, the API filters their
