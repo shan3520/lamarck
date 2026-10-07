@@ -312,3 +312,37 @@ def test_nemotron_thinking_is_off_at_low_effort(monkeypatch):
     client.chat(model="openai/gpt-oss-20b", system="s", user="u", max_tokens=5, effort="low", json_mode=False)
     assert bodies[0]["chat_template_kwargs"] == {"enable_thinking": False}
     assert "chat_template_kwargs" not in bodies[1] and "chat_template_kwargs" not in bodies[2]
+
+
+def test_bare_429_throttle_is_ridden_out_within_quota_wait(monkeypatch):
+    # NVIDIA: bare "Too Many Requests" after the normal retries; it lifted within ~30 s in a real run
+    import io
+    import urllib.error
+
+    from lamarck import chat_compat
+
+    monkeypatch.setenv("NVIDIA_API_KEY", "k")
+    client = chat_compat.ChatClient.for_provider("nvidia")
+    client.max_retries, client.quota_wait = 1, 600
+    slept = []
+    monkeypatch.setattr(chat_compat.time, "sleep", lambda s: slept.append(s))
+    bare = b'{"status":429,"title":"Too Many Requests"}'
+
+    class Resp(io.BytesIO):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    replies = [urllib.error.HTTPError("u", 429, "r", {}, io.BytesIO(bare)) for _ in range(3)] + [Resp(b'{"ok": 1}')]
+
+    def fake(req, timeout):
+        r = replies.pop(0)
+        if isinstance(r, Exception):
+            raise r
+        return r
+
+    monkeypatch.setattr(chat_compat.urllib.request, "urlopen", fake)
+    assert client._post("/x", {}) == {"ok": 1}
+    assert slept == [1.0, 65.0, 65.0] and client.quota_wait == 600 - 130

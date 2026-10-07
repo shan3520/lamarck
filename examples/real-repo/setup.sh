@@ -5,4 +5,5 @@ cd "$(dirname "$0")"
 mkdir -p repos
 [ -d repos/itsdangerous ] || git clone https://github.com/pallets/itsdangerous.git repos/itsdangerous
 [ -d repos/python-slugify ] || git clone https://github.com/un33k/python-slugify.git repos/python-slugify
+[ -d repos/more-itertools ] || git clone https://github.com/more-itertools/more-itertools.git repos/more-itertools
 echo "Done. Test dependencies: pip install pytest freezegun text-unidecode"

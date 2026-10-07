@@ -148,6 +148,8 @@ class ChatClient:
                     continue
                 if exc.code == 429:
                     wait = retry_hint(msg)
+                    if wait is None and not _DAILY.search(msg):
+                        wait = 60.0  # bare throttle (NVIDIA): it lifted within ~30 s in practice; ride it out
                     if wait is not None and wait + 5 <= self.quota_wait:
                         # rolling per-day window: tokens free up as old usage ages out; wait instead of failing
                         self.quota_wait -= wait + 5

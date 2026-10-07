@@ -21,9 +21,10 @@
     "k_screen": 2,
     "k_confirm": 4,
     "k_heldout": 4,
-    "workers": 4,
+    "workers": 2,
     "max_total_tokens": 12000000
   },
   "gate": {}
 }
+
 
