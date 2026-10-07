@@ -69,12 +69,11 @@ class TaskSuite:
 
     def assign_splits(self, heldout_fraction: float = 0.3, salt: str = "lamarck") -> "TaskSuite":
         """Deterministic, hash-based split so re-runs never leak held-out tasks into training."""
-        out = []
-        for t in self.tasks:
-            h = int(hashlib.sha256(f"{salt}:{t.id}".encode()).hexdigest(), 16) % 10_000
-            split = HELDOUT if h < heldout_fraction * 10_000 else TRAIN
-            out.append(Task(t.id, t.prompt, t.verifier, split, t.tags, t.meta))
-        return TaskSuite(out)
+        # Rank by hash and hold out exactly round(fraction * n) tasks. A per-task threshold is too
+        # lumpy for small suites (11 calibrated tasks gave 1 held-out task at every fraction 0.4-0.5).
+        rank = sorted(self.tasks, key=lambda t: hashlib.sha256(f"{salt}:{t.id}".encode()).hexdigest())
+        held = {t.id for t in rank[: round(heldout_fraction * len(rank))]}
+        return TaskSuite([Task(t.id, t.prompt, t.verifier, HELDOUT if t.id in held else TRAIN, t.tags, t.meta) for t in self.tasks])
 
     @classmethod
     def load(cls, path: str | Path) -> "TaskSuite":
