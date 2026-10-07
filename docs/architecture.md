@@ -67,5 +67,6 @@ tasks ──► evaluate seed (avg@k) ──► archive root
 1. `mine-git`, then `validate-tasks`: only fail-to-pass tasks remain.
 2. Prefer commits newer than the target model's training data, to avoid memorization.
 3. Drop huge refactors. A task should be a focused change.
-4. Use at least 20 held-out rollouts (tasks × `k_heldout`), or the verdict will be INCONCLUSIVE.
-5. Use `{python}` in commands, so tests run in the same environment as Lamarck.
+4. `calibrate` with the agent you will evolve: keep only tasks it sometimes solves. Walls and already-solved tasks score the same under every harness, so they hide real gains in noise. Calibration rollouts use their own seeds and are never reused by the run, because tasks are selected on them.
+5. Use at least 20 held-out rollouts (tasks × `k_heldout`), or the verdict will be INCONCLUSIVE.
+6. Use `{python}` in commands, so tests run in the same environment as Lamarck.

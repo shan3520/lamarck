@@ -40,6 +40,20 @@ Keeps only tasks whose tests **fail** on the base snapshot (with the new tests w
 | `--max-seconds` | 120 | Drop tasks whose tests are slower than this |
 | `--heldout` | (keep) | Re-assign the train/held-out split with this held-out fraction |
 
+### `lamarck calibrate -c CONFIG`
+Runs the seed harness on every task in the config's task file and keeps only **learnable** tasks: ones the agent sometimes solves. A **wall** (never solved) or an already-solved task gives every candidate harness the same score, so it only adds cost and noise. Run it after `validate-tasks` and before `run`, then point `"tasks"` in the config at the output.
+
+| Option | Default | Meaning |
+|---|---|---|
+| `--out` | `tasks.calibrated.json` | Calibrated task file. Also writes `<out>.report.json` (per-task score and zone) and `<out>.trials.jsonl` (saved rollouts) |
+| `-k` | 2 | Rollouts per task |
+| `--low` / `--high` | 0 / 0.9 | Score at or below `--low` is a wall; at or above `--high` is already solved |
+| `--heldout` | (keep) | Re-assign the train/held-out split with this held-out fraction |
+| `--workers` | `evolve.workers` | Parallel agent runs |
+| `-y, --yes` | | Don't ask for confirmation |
+
+Calibration uses its own seeds, and its rollouts are never reused by `run`. Tasks are *selected* on these outcomes, so reusing them would flatter every later candidate (regression to the mean). It is resumable: after a pause, rerun the same command.
+
 ### `lamarck run`
 Evolves the harness.
 

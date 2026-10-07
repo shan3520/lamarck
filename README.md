@@ -96,12 +96,16 @@ lamarck mine-git --repo . --test-cmd "{python} -m pytest -q {tests}" --out .lama
 ```bash
 lamarck validate-tasks .lamarck/tasks.mined.json --out .lamarck/tasks.json --heldout 0.4
 ```
-Then point the target at your agent in `.lamarck/lamarck.json`, using one of these:
+Point the target at your agent in `.lamarck/lamarck.json`, using one of these:
 ```json
 "target": {"type": "command", "harness_file": "CLAUDE.md", "agent_cmd": "claude -p \"$(cat {prompt_file})\" --permission-mode acceptEdits"}
 ```
 ```json
 "target": {"type": "command", "harness_file": "AGENT.md", "agent_cmd": "{python} -m lamarck.agents.mini --model qwen/qwen3.8-27b --prompt-file {prompt_file}"}
+```
+Then keep only the tasks your agent sometimes solves, and set `"tasks": "tasks.calibrated.json"` in the config:
+```bash
+lamarck calibrate -c .lamarck/lamarck.json
 ```
 ```bash
 lamarck run -c .lamarck/lamarck.json
@@ -109,6 +113,7 @@ lamarck run -c .lamarck/lamarck.json
 
 - **`mine-git`** turns every commit that changed both source and tests into a task: start from the commit's parent, add the commit's tests, make them pass. The commit message is the issue text.
 - **`validate-tasks`** keeps only tasks whose tests **fail before** the real fix and **pass after** it, the same check SWE-bench uses. In the itsdangerous repo, 11 of 20 mined tasks failed this check.
+- **`calibrate`** runs your agent on every task and drops **walls** (never solved) and already-solved tasks. Evolution learns only from tasks the agent *sometimes* solves. Without this step, our first real-repo runs had almost only walls, so no edit could show a gain.
 - The **mini agent** (`lamarck.agents.mini`) is a small, token-frugal, bash-only coding agent that runs on free Groq models. Its instruction file `AGENT.md` is the harness Lamarck evolves.
 - A complete worked example is in [`examples/real-repo/`](examples/real-repo/). Run `examples/real-repo/setup.sh` to clone its repos.
 

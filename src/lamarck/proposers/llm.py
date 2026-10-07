@@ -28,6 +28,11 @@ Use `set_component` only when an existing instruction is actively wrong.
 - Keep each edit short (a few sentences). Every token is paid on every future task.
 - Each proposal may contain at most {budget} edit(s). Make proposals independent so each can be tested alone.
 - Do not repeat a hypothesis that the history shows was already rejected unless you change it materially.
+- Fix the agent's PROCESS, not the code it was working on. The tasks are bug fixes and features in \
+different code; domain knowledge (how a library handles dates, encodings, signatures...) helps one task at best. \
+Look instead for how the agent works: does it run the failing tests first, read what they expect, keep exploring \
+without editing, repeat commands that already failed, run out of steps, or finish without re-running the tests?
+- A cluster that affects a single task is not worth an edit; prefer clusters that span several tasks.
 - Procedural fixes usually generalize best: state the acceptance criteria, then verify the output against them \
 before finishing.
 

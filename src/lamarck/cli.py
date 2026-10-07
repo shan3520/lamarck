@@ -3,6 +3,7 @@
     lamarck demo                         zero-cost simulated run (no API key needed)
     lamarck init DIR [--from CLAUDE.md]  scaffold a project (harness + config)
     lamarck mine-git --repo PATH         mine verified tasks from git history
+    lamarck calibrate -c lamarck.json    keep only tasks the agent sometimes solves
     lamarck run -c lamarck.json          evolve the harness; writes a run directory
 """
 
@@ -153,27 +154,71 @@ def cmd_validate(args) -> int:
     return 0 if kept.tasks else 1
 
 
+def _load_project(config: str):
+    """Config, tasks, seed harness and credentials for a project (shared by run and calibrate)."""
+    cfg_path = Path(config).resolve()
+    base = cfg_path.parent
+    conf = {**DEFAULT_CONFIG, **json.loads(cfg_path.read_text(encoding="utf-8"))}
+    suite = TaskSuite.load(base / conf["tasks"])
+    harness = Harness.load(base / conf["harness_dir"])
+    load_dotenv(base / ".env", Path.cwd() / ".env")
+    via = configure_gateway()
+    from .llm import set_rate_limit
+
+    set_rate_limit(conf.get("requests_per_minute"))
+    return cfg_path, base, conf, suite, harness, via
+
+
+def cmd_calibrate(args) -> int:
+    from .calibrate import calibrate, select, table
+    from .evaluate import TrialCache
+
+    cfg_path, base, conf, suite, harness, _ = _load_project(args.config)
+    if conf["target"].get("type") == "simulated":
+        raise SystemExit("calibration needs a real target (the simulated one has no task difficulty to measure)")
+    target = build_target(conf["target"])
+    out = Path(args.out) if args.out else base / "tasks.calibrated.json"
+    cache = TrialCache(out.with_suffix(".trials.jsonl"))  # resumable: rerun the same command after a pause
+    n = len(suite.tasks)
+    print(f"Calibrating {n} tasks with the seed harness: {args.k} rollouts each (~{n * args.k} agent runs).")
+    if len(cache):
+        print(f"Resuming: {len(cache)} saved rollouts are replayed from disk at no cost.")
+    if not args.yes and input("This runs the agent on every task. Continue? [y/N] ").strip().lower() not in ("y", "yes"):
+        print("Aborted.")
+        return 1
+    workers = args.workers or conf.get("evolve", {}).get("workers", 3)
+    try:
+        cals, _ = calibrate(target, harness, suite, k=args.k, workers=workers, cache=cache, low=args.low, high=args.high)
+    except Exception as exc:
+        if not is_fatal(exc):
+            raise
+        print(f"\nPaused: {describe_fatal(exc)}. {len(cache)} rollouts are saved; rerun the same command to continue.")
+        return 4
+    print(table(cals))
+    kept = select(suite, cals, args.heldout)
+    kept.save(out)
+    (out.with_suffix(".report.json")).write_text(json.dumps([c.__dict__ for c in cals], indent=2), encoding="utf-8")
+    print(f"\nKept {len(kept.tasks)} learnable tasks ({len(kept.train())} train / {len(kept.heldout())} held-out) -> {out}")
+    if len(kept.train()) < 4 or len(kept.heldout()) < 3:
+        print("Too few learnable tasks for a trustworthy run. Mine more tasks, raise the agent's step budget, "
+              "or use a stronger model; walls give harness evolution nothing to learn from.")
+        return 2
+    print(f"Next: point \"tasks\" in {cfg_path.name} at {out.name}, then lamarck run -c {cfg_path.name}")
+    return 0
+
+
 def cmd_run(args) -> int:
     if args.resume:
         meta_path = Path(args.resume) / "run_meta.json"
         if not meta_path.is_file():
             raise SystemExit(f"nothing to resume: {meta_path} not found")
         args.config, args.out = json.loads(meta_path.read_text(encoding="utf-8"))["config"], args.resume
-    cfg_path = Path(args.config).resolve()
-    base = cfg_path.parent
-    conf = {**DEFAULT_CONFIG, **json.loads(cfg_path.read_text(encoding="utf-8"))}
-    suite = TaskSuite.load(base / conf["tasks"])
+    cfg_path, base, conf, suite, harness, via = _load_project(args.config)
     if not suite.heldout():
         suite = suite.assign_splits(0.3)
         print("No held-out split in the task file; assigned 30% of tasks to held-out deterministically.")
-    harness = Harness.load(base / conf["harness_dir"])
     gate = _pick(GateConfig, conf.get("gate", {}))
     ecfg = _pick(EvolveConfig, {**conf.get("evolve", {}), "gate": gate})
-    load_dotenv(base / ".env", Path.cwd() / ".env")
-    via = configure_gateway()
-    from .llm import set_rate_limit
-
-    set_rate_limit(conf.get("requests_per_minute"))
     target, proposer = build_target(conf["target"]), build_proposer(conf["proposer"])
 
     est = len(suite.train()) * ecfg.k_confirm + ecfg.iterations * (ecfg.proposals_per_iter * len(suite.train()) * ecfg.k_confirm + 1) + 2 * len(suite.heldout()) * ecfg.k_heldout
@@ -273,6 +318,17 @@ def main(argv: list[str] | None = None) -> int:
     v.add_argument("--max-seconds", type=float, default=120.0, help="drop tasks whose tests take longer than this")
     v.add_argument("--heldout", type=float, default=None, help="re-assign the train/held-out split with this held-out fraction")
     v.set_defaults(fn=cmd_validate)
+
+    c = sub.add_parser("calibrate", help="keep only tasks the agent sometimes solves (drop walls and already-solved tasks)")
+    c.add_argument("-c", "--config", default="lamarck.json")
+    c.add_argument("--out", help="calibrated task file (default: tasks.calibrated.json next to the config)")
+    c.add_argument("-k", type=int, default=2, help="rollouts per task (default 2)")
+    c.add_argument("--low", type=float, default=0.0, help="score at or below this is a wall (default 0)")
+    c.add_argument("--high", type=float, default=0.9, help="score at or above this is already solved (default 0.9)")
+    c.add_argument("--heldout", type=float, default=None, help="re-assign the train/held-out split with this held-out fraction")
+    c.add_argument("--workers", type=int, help="parallel agent runs (default: evolve.workers from the config)")
+    c.add_argument("-y", "--yes", action="store_true")
+    c.set_defaults(fn=cmd_calibrate)
 
     r = sub.add_parser("run", help="evolve the harness")
     r.add_argument("-c", "--config", default="lamarck.json")

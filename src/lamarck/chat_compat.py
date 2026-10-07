@@ -119,6 +119,10 @@ class ChatClient:
             body["reasoning_format"] = "hidden"
         elif self.provider == "gemini" and effort:
             body["reasoning_effort"] = effort
+        elif self.provider == "nvidia" and "nemotron" in model and effort in (None, "low", "none"):
+            # With thinking on, Nemotron spent a 2000-token step budget on hidden reasoning and
+            # returned nothing (~1 min per step in a real run); with it off a step takes ~1 s.
+            body["chat_template_kwargs"] = {"enable_thinking": False}
         return self._post("/chat/completions", body)
 
     def _post(self, path: str, body: dict) -> dict:

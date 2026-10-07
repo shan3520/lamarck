@@ -226,10 +226,18 @@ def task_specific_literals(suite: TaskSuite) -> set[str]:
         for tok in set(_ID_TOKEN.findall(t.prompt)):
             prompt_counts[tok] = prompt_counts.get(tok, 0) + 1
     literals |= {tok for tok, n in prompt_counts.items() if n == 1}
+    # code identifiers (SignatureExpired, date_signed) named by a single task: an edit teaching
+    # them is a fix for that task's bug, not a behavior (seen in real runs: "timestamp" skills)
+    code_counts: dict[str, int] = {}
+    for t in suite.tasks:
+        for tok in set(_CODE_IDENT.findall(t.prompt)):
+            code_counts[tok] = code_counts.get(tok, 0) + 1
+    literals |= {tok for tok, n in code_counts.items() if n == 1}
     return literals
 
 
 _ID_TOKEN = re.compile(r"\b(?=[\w-]*\d)[\w-]{5,}\b")
+_CODE_IDENT = re.compile(r"\b(?:[A-Z][a-z0-9]+(?:[A-Z][a-z0-9]*)+|[a-z][a-z0-9]*(?:_[a-z0-9]+)+)\b")
 
 
 def _verifier_literals(v: dict) -> list[str]:

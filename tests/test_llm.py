@@ -297,3 +297,18 @@ def test_shell_tool_is_sent_in_request_body(monkeypatch):
     client.chat(model="m", system="s", user="u", max_tokens=5, effort=None, json_mode=False, shell_tool=True)
     client.chat(model="m", system="s", user="u", max_tokens=5, effort=None, json_mode=False)
     assert bodies[0]["tools"][0]["function"]["name"] == "bash" and "tools" not in bodies[1]
+
+
+def test_nemotron_thinking_is_off_at_low_effort(monkeypatch):
+    # thinking on: the step budget went to hidden reasoning and the reply was empty
+    from lamarck import chat_compat
+
+    monkeypatch.setenv("NVIDIA_API_KEY", "k")
+    client = chat_compat.ChatClient.for_provider("nvidia")
+    bodies = []
+    monkeypatch.setattr(client, "_post", lambda path, body: bodies.append(body) or {})
+    for effort in ("low", "high"):
+        client.chat(model="nvidia/nemotron-3-super-120b-a12b", system="s", user="u", max_tokens=5, effort=effort, json_mode=False)
+    client.chat(model="openai/gpt-oss-20b", system="s", user="u", max_tokens=5, effort="low", json_mode=False)
+    assert bodies[0]["chat_template_kwargs"] == {"enable_thinking": False}
+    assert "chat_template_kwargs" not in bodies[1] and "chat_template_kwargs" not in bodies[2]
