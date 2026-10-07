@@ -154,7 +154,10 @@ class ChatClient:
                         time.sleep(wait + 5)
                         attempt -= 1  # waiting out the quota doesn't use up a retry
                         continue
-                    raise GatewayHTTPError(429, "daily quota (per-day limit) reached: " + msg) from None
+                    if _DAILY.search(msg):
+                        raise GatewayHTTPError(429, "daily quota (per-day limit) reached: " + msg) from None
+                    # NVIDIA answers a per-minute overrun with a bare "Too Many Requests": not a daily quota
+                    raise GatewayHTTPError(429, "rate limit still exceeded after retries: " + msg) from None
                 raise GatewayHTTPError(exc.code, msg) from None
             except (urllib.error.URLError, TimeoutError, ConnectionError) as exc:
                 # Network outage (seen in a real run: DNS failures). Keep retrying for a while without

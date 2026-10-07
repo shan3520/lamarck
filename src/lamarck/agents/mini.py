@@ -143,7 +143,13 @@ def _main(argv: list[str] | None, client) -> int:
     ap.add_argument("--cmd-timeout", type=int, default=120)
     ap.add_argument("--effort", default="low")
     ap.add_argument("--quota-wait", type=float, default=600.0, help="seconds per attempt the agent may wait out a rolling daily quota")
+    ap.add_argument("--rpm", type=float, default=None,
+                    help="max model requests per minute for this agent (parallel agents share a provider's limit: use limit / workers)")
     a = ap.parse_args(argv)
+    if a.rpm:
+        from ..llm import set_rate_limit
+
+        set_rate_limit(a.rpm)
     for stream in (sys.stdout, sys.stderr):
         try:
             stream.reconfigure(encoding="utf-8", errors="replace")

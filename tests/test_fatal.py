@@ -145,3 +145,13 @@ def test_agent_crash_is_an_infra_error(tmp_path):
     task = mine_git_tasks(r, MineConfig(test_cmd="{python} {tests}", heldout_fraction=0.0)).tasks[0]
     trial = CommandTarget(agent_cmd='{python} -c "raise SystemExit(70)"').run(Harness({}), task, 0)
     assert trial.error and "crashed" in trial.error and not trial.passed
+
+
+def test_persistent_per_minute_429_pauses_with_honest_label():
+    # NVIDIA's bare "Too Many Requests" was mislabelled as a daily quota in a real run
+    from lamarck.chat_compat import GatewayHTTPError
+    from lamarck.evaluate import describe_fatal, is_fatal
+
+    exc = GatewayHTTPError(429, 'rate limit still exceeded after retries: {"status":429,"title":"Too Many Requests"}')
+    assert is_fatal(exc)
+    assert "daily" not in describe_fatal(exc) and "rate limit" in describe_fatal(exc)

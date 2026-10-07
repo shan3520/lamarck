@@ -33,13 +33,18 @@ def _daily_quota_exhausted(exc: BaseException) -> bool:
     return getattr(exc, "status_code", None) == 429 and ("per-day" in msg or "per day" in msg)
 
 
+def _rate_limited(exc: BaseException) -> bool:
+    # a 429 that survived the client's retries: the run must pause, never score the task as failed
+    return getattr(exc, "status_code", None) == 429
+
+
 def _network_down(exc: BaseException) -> bool:
     return getattr(exc, "status_code", None) == 0 and "network" in str(exc).lower()
 
 
 def is_fatal(exc: BaseException) -> bool:
     return (isinstance(exc, FatalRunError) or getattr(exc, "status_code", None) in FATAL_STATUS
-            or _daily_quota_exhausted(exc) or _network_down(exc))
+            or _rate_limited(exc) or _network_down(exc))
 
 
 def describe_fatal(exc: BaseException) -> str:
@@ -49,6 +54,8 @@ def describe_fatal(exc: BaseException) -> str:
         return "network unavailable (no internet connection?)"
     if _daily_quota_exhausted(exc):
         return "daily free-model request quota exhausted (resets at 00:00 UTC) (HTTP 429)"
+    if _rate_limited(exc):
+        return "rate limit still exceeded after retries (HTTP 429); lower the request rate or wait a few minutes"
     return f"{FATAL_STATUS[exc.status_code]} (HTTP {exc.status_code})"
 
 
