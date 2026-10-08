@@ -192,7 +192,7 @@ class Evolver:
         screen_res = self._eval(child_h, self.train, cfg.k_screen)
         tok_delta = self._tokens_per_rollout(screen_res) - parent.tokens_per_rollout
         cmp1 = compare(parent_res.rates, screen_res.rates, cfg.gate.solved_threshold, cfg.gate.preserve_threshold)
-        d1 = screen(cmp1, self.noise[parent.id], n, cfg.gate, tok_delta)
+        d1 = screen(cmp1, self.noise[parent.id], n, cfg.gate, tok_delta, parent.tokens_per_rollout)
         if not d1.accept:
             return reject(f"screen: {d1.reason}", gain=cmp1.gain, regression=cmp1.regression, klass=cmp1.klass, train_rates=screen_res.rates)
 
@@ -201,7 +201,7 @@ class Evolver:
         cmp2 = compare(parent_res.rates, full.rates, cfg.gate.solved_threshold, cfg.gate.preserve_threshold)
         child_noise = noise_band(full)
         combined = math.sqrt(self.noise[parent.id] ** 2 + child_noise**2)
-        d2 = confirm(cmp2, combined, n, cfg.gate, tok_delta)
+        d2 = confirm(cmp2, combined, n, cfg.gate, tok_delta, parent.tokens_per_rollout)
 
         node.gain, node.regression, node.klass = cmp2.gain, cmp2.regression, cmp2.klass
         node.train_rates = full.rates

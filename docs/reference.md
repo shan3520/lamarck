@@ -132,7 +132,7 @@ Paths are relative to the config file.
 | `max_regression` | 1.0 | δ: total score loss tolerated on tasks the parent reliably solved (task units) |
 | `preserve_threshold` | 0.8 | A parent "reliably solves" a task at or above this score |
 | `noise_mult` | 1.0 | A gain must exceed `noise_mult` × the bootstrap noise band |
-| `tokens_per_point` | 4000 | Cost rule: added tokens per rollout allowed per +1 task of gain |
+| `tokens_per_point` | `null` | Cost rule. `null` (default) is the **per-success** rule: a candidate may add tokens per rollout only if the tokens spent per solved task don't rise, so its relative token increase can't exceed its relative increase in successes. A number selects the legacy absolute rule: added tokens per rollout allowed per +1 task of gain (4000 was the old default; too strict for real-repo rollouts of ~35k tokens) |
 | `solved_threshold` | 0.5 | Score at which a task counts as solved (for solved-set classes) |
 | `min_heldout_rollouts` | 20 | Below this many held-out rollouts the verdict is INCONCLUSIVE |
 
