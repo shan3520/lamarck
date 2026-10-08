@@ -261,14 +261,17 @@ def cmd_run(args) -> int:
             if not is_fatal(exc):
                 raise
             wait = retry_hint(str(exc))
-            if wait is None and ("network" in str(exc).lower() or "rate limit still exceeded" in str(exc)):
-                wait = 300.0  # internet outage or per-minute overrun: check again in a few minutes (backs off if it persists)
+            # internet outage or per-minute overrun: no quota is being burned, so just check again in a
+            # few minutes (a real outage overnight left a run sleeping 2.5 h after the network was back)
+            transient = wait is None and ("network" in str(exc).lower() or "rate limit still exceeded" in str(exc))
+            if transient:
+                wait = 300.0
             # The provider's hint only says when the *next request* fits. If waiting that long
             # finished no rollout, a partial attempt was wasted: back off (20, 40, 80 min ...) so the
             # rolling window frees enough quota for whole attempts.
             stalled = stalled + 1 if len(cache) == last_saved else 0
             last_saved = len(cache)
-            if wait is not None and stalled:
+            if wait is not None and stalled and not transient:
                 wait = max(wait, 1200 * 2 ** (stalled - 1))
             if wait is not None:
                 wait = min(wait, args.max_wait * 3600)
