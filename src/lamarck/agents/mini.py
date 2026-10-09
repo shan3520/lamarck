@@ -142,6 +142,7 @@ def _main(argv: list[str] | None, client) -> int:
     ap.add_argument("--keep", type=int, default=4)
     ap.add_argument("--cmd-timeout", type=int, default=120)
     ap.add_argument("--effort", default="low")
+    ap.add_argument("--step-tokens", type=int, default=2500, help="max output tokens per step (reasoning models need more)")
     ap.add_argument("--quota-wait", type=float, default=600.0, help="seconds per attempt the agent may wait out a rolling daily quota")
     ap.add_argument("--rpm", type=float, default=None,
                     help="max model requests per minute for this agent (parallel agents share a provider's limit: use limit / workers)")
@@ -173,7 +174,7 @@ def _main(argv: list[str] | None, client) -> int:
             end = "token cap"
             break
         try:
-            c = complete(client, model=a.model, system=system, user=build_user(task, history, a.keep, step, a.max_steps), max_tokens=2500, effort=a.effort,
+            c = complete(client, model=a.model, system=system, user=build_user(task, history, a.keep, step, a.max_steps), max_tokens=a.step_tokens, effort=a.effort,
                          shell_tool=a.provider == "gemini")
         except EmptyResponseError:
             history.append(("(no command)", "The model returned an empty reply. Reply with one ```bash block or SUBMIT."))

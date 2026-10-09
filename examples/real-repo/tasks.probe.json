@@ -1,0 +1,257 @@
+{
+ "tasks": [
+  {
+   "id": "git-def2dabea8",
+   "prompt": "Fix one()/only() dropping a falsy user-supplied exception\n\n`one(it, too_long=exc)` and `only(it, too_long=exc)` used\n`raise too_long or ValueError(msg)`, so a `too_long`/`too_short` whose\ninstances are falsy (e.g. an Exception subclass overriding `__bool__`)\nwas discarded and the default `ValueError` raised instead.\n\nSwitch to explicit `is not None` checks, and only build the default\nmessage when no custom exception is supplied so a faulty `__repr__` on\nthe iterable's items can't shadow the requested exception.\n\nCo-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): tests/test_more.py\nRun them with: {python} -m pytest -q tests/test_more.py",
+   "verifier": {
+    "type": "command",
+    "cmd": "{python} -m pytest -q tests/test_more.py"
+   },
+   "split": "train",
+   "tags": [
+    "git"
+   ],
+   "meta": {
+    "repo": "repos/more-itertools",
+    "base": "9ed3dbb0ae527230cd156d91d0af305478558fba",
+    "commit": "def2dabea858b6ecb84ee0c52e6e07929f2c409c",
+    "test_files": [
+     "tests/test_more.py"
+    ],
+    "src_files": [
+     "docs/versions.rst",
+     "more_itertools/more.py"
+    ]
+   }
+  },
+  {
+   "id": "git-4f399222d0",
+   "prompt": "Issue 1093: Add serialize()\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): tests/test_more.py\nRun them with: {python} -m pytest -q tests/test_more.py",
+   "verifier": {
+    "type": "command",
+    "cmd": "{python} -m pytest -q tests/test_more.py"
+   },
+   "split": "train",
+   "tags": [
+    "git"
+   ],
+   "meta": {
+    "repo": "repos/more-itertools",
+    "base": "130d1ac88eff33084b14759402a4f8ba1d02c6d7",
+    "commit": "4f399222d0b7953856db06d7f269bd3ede9e32e7",
+    "test_files": [
+     "tests/test_more.py"
+    ],
+    "src_files": [
+     "README.rst",
+     "docs/api.rst",
+     "more_itertools/more.py",
+     "more_itertools/more.pyi"
+    ]
+   }
+  },
+  {
+   "id": "git-def2d821c0",
+   "prompt": "Simplify nth_permutation. Fix incorrect exception.\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): tests/test_recipes.py\nRun them with: {python} -m pytest -q tests/test_recipes.py",
+   "verifier": {
+    "type": "command",
+    "cmd": "{python} -m pytest -q tests/test_recipes.py"
+   },
+   "split": "heldout",
+   "tags": [
+    "git"
+   ],
+   "meta": {
+    "repo": "repos/more-itertools",
+    "base": "6b32fbfba127d6b4aaf57d6b254b2ab5fc80ae76",
+    "commit": "def2d821c0a15ede86578660e7dc48e44bad9579",
+    "test_files": [
+     "tests/test_recipes.py"
+    ],
+    "src_files": [
+     "more_itertools/more.py"
+    ]
+   }
+  },
+  {
+   "id": "git-be5793a55f",
+   "prompt": "Two fixes for repeat with iterator arguments\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): tests/test_more.py\nRun them with: {python} -m pytest -q tests/test_more.py",
+   "verifier": {
+    "type": "command",
+    "cmd": "{python} -m pytest -q tests/test_more.py"
+   },
+   "split": "train",
+   "tags": [
+    "git"
+   ],
+   "meta": {
+    "repo": "repos/more-itertools",
+    "base": "fdbd43c569feb4388302ddee0551d18edd39fadc",
+    "commit": "be5793a55f58ee29521d8cbc9f14019f5833454e",
+    "test_files": [
+     "tests/test_more.py"
+    ],
+    "src_files": [
+     "more_itertools/more.py"
+    ]
+   }
+  },
+  {
+   "id": "git-f89d7a3331",
+   "prompt": "Issue 1304: make ichunked match chunked for n=0 and negative n\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): tests/test_more.py\nRun them with: {python} -m pytest -q tests/test_more.py",
+   "verifier": {
+    "type": "command",
+    "cmd": "{python} -m pytest -q tests/test_more.py"
+   },
+   "split": "train",
+   "tags": [
+    "git"
+   ],
+   "meta": {
+    "repo": "repos/more-itertools",
+    "base": "790bb0bb2c03e7a07282e5f16f4b1fde35b8fcf5",
+    "commit": "f89d7a3331ba6b5421273e556c0a738e3dd1dd35",
+    "test_files": [
+     "tests/test_more.py"
+    ],
+    "src_files": [
+     "docs/versions.rst",
+     "more_itertools/more.py"
+    ]
+   }
+  },
+  {
+   "id": "git-f966a62e4c",
+   "prompt": "Added fallback signers and switch back to sha1\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): tests/test_itsdangerous/test_serializer.py\nRun them with: {python} -m pytest -q -p no:cacheprovider -o pythonpath=src tests/test_itsdangerous/test_serializer.py",
+   "verifier": {
+    "type": "command",
+    "cmd": "{python} -m pytest -q -p no:cacheprovider -o pythonpath=src tests/test_itsdangerous/test_serializer.py"
+   },
+   "split": "train",
+   "tags": [
+    "git"
+   ],
+   "meta": {
+    "repo": "repos/itsdangerous",
+    "base": "2ef8fe08c159de9f1232dbab86f8606aecd6392b",
+    "commit": "f966a62e4c0031b885566b529cc33fe9f6ae9f18",
+    "test_files": [
+     "tests/test_itsdangerous/test_serializer.py"
+    ],
+    "src_files": [
+     "src/itsdangerous/serializer.py",
+     "src/itsdangerous/signer.py"
+    ]
+   }
+  },
+  {
+   "id": "git-6887a7bd5a",
+   "prompt": "Add running_median\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): tests/test_recipes.py\nRun them with: {python} -m pytest -q tests/test_recipes.py",
+   "verifier": {
+    "type": "command",
+    "cmd": "{python} -m pytest -q tests/test_recipes.py"
+   },
+   "split": "train",
+   "tags": [
+    "git"
+   ],
+   "meta": {
+    "repo": "repos/more-itertools",
+    "base": "95d91e4e905053e2c0db17bf659ab5d5046d61fb",
+    "commit": "6887a7bd5ac3787a8721eddca9c93dd4d3eda5f7",
+    "test_files": [
+     "tests/test_recipes.py"
+    ],
+    "src_files": [
+     "README.rst",
+     "docs/api.rst",
+     "more_itertools/recipes.py",
+     "more_itertools/recipes.pyi"
+    ]
+   }
+  },
+  {
+   "id": "git-cf6cd3dad4",
+   "prompt": "Skip the transliteration backend for ASCII text (#201)\n\nEvery backend (text-unidecode, Unidecode, anyascii) maps 7-bit ASCII to\nitself, so ASCII input no longer imports one. With text-unidecode this\navoids loading its ~3 MB table for the common case of ASCII slugs.\nOutput is unchanged, including the frozen legacy differential.\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): tests/test_release.py\nRun them with: {python} -m pytest -q tests/test_release.py",
+   "verifier": {
+    "type": "command",
+    "cmd": "{python} -m pytest -q tests/test_release.py"
+   },
+   "split": "train",
+   "tags": [
+    "git"
+   ],
+   "meta": {
+    "repo": "repos/python-slugify",
+    "base": "2fe6cec4842039814217cb8d089c6fcb9f8c154b",
+    "commit": "cf6cd3dad45dea9641755adab80c00a9dbaee709",
+    "test_files": [
+     "tests/test_release.py"
+    ],
+    "src_files": [
+     "slugify/_legacy.py",
+     "slugify/slugify.py"
+    ]
+   }
+  },
+  {
+   "id": "git-548b14fab3",
+   "prompt": "Preserve fitting post-replacement output during modern truncation (#193)\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): test_release.py\nRun them with: {python} -m pytest -q test_release.py",
+   "verifier": {
+    "type": "command",
+    "cmd": "{python} -m pytest -q test_release.py"
+   },
+   "split": "heldout",
+   "tags": [
+    "git"
+   ],
+   "meta": {
+    "repo": "repos/python-slugify",
+    "base": "df37f92c5329eaf28328e88d0da0a7a93709e37a",
+    "commit": "548b14fab321ae9bfcb6db7fd990f6ddd7d3192b",
+    "test_files": [
+     "test_release.py"
+    ],
+    "src_files": [
+     "slugify/slugify.py"
+    ]
+   }
+  },
+  {
+   "id": "git-0635526a82",
+   "prompt": "split into modules\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): tests/test_itsdangerous.py\nRun them with: {python} -m pytest -q -p no:cacheprovider -o pythonpath=src tests/test_itsdangerous.py",
+   "verifier": {
+    "type": "command",
+    "cmd": "{python} -m pytest -q -p no:cacheprovider -o pythonpath=src tests/test_itsdangerous.py"
+   },
+   "split": "heldout",
+   "tags": [
+    "git"
+   ],
+   "meta": {
+    "repo": "repos/itsdangerous",
+    "base": "7bd9f35e6e390c3357369896dcb4f63e19f3134b",
+    "commit": "0635526a8291da42aa0055a8207d7afe85154830",
+    "test_files": [
+     "tests/test_itsdangerous.py"
+    ],
+    "src_files": [
+     ".gitignore",
+     ".pre-commit-config.yaml",
+     "CHANGES.rst",
+     "setup.cfg",
+     "src/itsdangerous/__init__.py",
+     "src/itsdangerous/_compat.py",
+     "src/itsdangerous/_json.py",
+     "src/itsdangerous/encoding.py",
+     "src/itsdangerous/exc.py",
+     "src/itsdangerous/jws.py",
+     "src/itsdangerous/serializer.py",
+     "src/itsdangerous/signer.py",
+     "src/itsdangerous/timed.py",
+     "src/itsdangerous/url_safe.py"
+    ]
+   }
+  }
+ ]
+}

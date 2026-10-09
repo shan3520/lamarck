@@ -1,0 +1,28 @@
+{
+  "harness_dir": "harness",
+  "tasks": "tasks.probe.json",
+  "requests_per_minute": 20,
+  "target": {
+    "type": "command",
+    "harness_file": "AGENT.md",
+    "timeout": 3600,
+    "agent_cmd": "{python} -m lamarck.agents.mini --provider nvidia --model z-ai/glm-5.3 --prompt-file {prompt_file} --max-steps 25 --max-tokens-total 200000 --step-tokens 6000 --rpm 9"
+  },
+  "proposer": {
+    "type": "llm",
+    "provider": "groq",
+    "model": "openai/gpt-oss-120b",
+    "effort": "medium",
+    "n_proposals": 1
+  },
+  "evolve": {
+    "iterations": 6,
+    "proposals_per_iter": 1,
+    "k_screen": 2,
+    "k_confirm": 4,
+    "k_heldout": 4,
+    "workers": 2,
+    "max_total_tokens": 12000000
+  },
+  "gate": {}
+}
