@@ -12,7 +12,7 @@
         "git"
       ],
       "meta": {
-        "repo": "repos\\itsdangerous",
+        "repo": "repos/itsdangerous",
         "base": "1a9b8d1f9968eb248bda69f39d373a6330b692ba",
         "commit": "c30678d19e37011890e2374cca04f7789e101793",
         "test_files": [
@@ -36,7 +36,7 @@
         "git"
       ],
       "meta": {
-        "repo": "repos\\itsdangerous",
+        "repo": "repos/itsdangerous",
         "base": "3703fbdedd13b2630dd9be75a3638408c193765d",
         "commit": "910a7a94ee88b15d0677f65ed87d7ccbbd998048",
         "test_files": [
@@ -62,7 +62,7 @@
         "git"
       ],
       "meta": {
-        "repo": "repos\\more-itertools",
+        "repo": "repos/more-itertools",
         "base": "d634820be7a23b6a85441ee67051530fb0a8a960",
         "commit": "670b715b307adfe5d2fca08a87ca562cb8bfea2c",
         "test_files": [
@@ -86,7 +86,7 @@
         "git"
       ],
       "meta": {
-        "repo": "repos\\more-itertools",
+        "repo": "repos/more-itertools",
         "base": "bc8be1013ac90fe3c1df8aae646b02605d578818",
         "commit": "7847d4324a581da8d0919734a8e50b2a6573b780",
         "test_files": [
@@ -109,7 +109,7 @@
         "git"
       ],
       "meta": {
-        "repo": "repos\\more-itertools",
+        "repo": "repos/more-itertools",
         "base": "e4d2a4a2a97246a73856754b2c4866d7f41d4875",
         "commit": "71b46b06fb48abcd2f7a26d74c148a650d340386",
         "test_files": [
@@ -132,7 +132,7 @@
         "git"
       ],
       "meta": {
-        "repo": "repos\\more-itertools",
+        "repo": "repos/more-itertools",
         "base": "b0106bae267a9b257ee1cb9241df706b68a81a0e",
         "commit": "867798d4cec55164b8cb184911b30e65097b40b8",
         "test_files": [
@@ -156,7 +156,7 @@
         "git"
       ],
       "meta": {
-        "repo": "repos\\more-itertools",
+        "repo": "repos/more-itertools",
         "base": "ed86a1528aa015f219f8d3385ea2ebd3f63a5212",
         "commit": "958990e22c4ab6daf434d89cf2b86d7a4a7a9e3c",
         "test_files": [
@@ -179,7 +179,7 @@
         "git"
       ],
       "meta": {
-        "repo": "repos\\more-itertools",
+        "repo": "repos/more-itertools",
         "base": "247e15b3a489d5805375c95dfa79486c9bd0eb1b",
         "commit": "edb3346f835ca917efbfda5e2d6664ab952da369",
         "test_files": [
@@ -202,7 +202,7 @@
         "git"
       ],
       "meta": {
-        "repo": "repos\\more-itertools",
+        "repo": "repos/more-itertools",
         "base": "aa8c480086052d4c2a64490d3214e67b7c6e674b",
         "commit": "cf186b5de4797602fef76c3391da2d110b88a954",
         "test_files": [
@@ -225,7 +225,7 @@
         "git"
       ],
       "meta": {
-        "repo": "repos\\more-itertools",
+        "repo": "repos/more-itertools",
         "base": "c834d6e4a0c4280b7b7750cb0de8dd8acb3d4c2c",
         "commit": "cca32949f12d473fd823e37a5530c30d2faa1332",
         "test_files": [
@@ -248,7 +248,7 @@
         "git"
       ],
       "meta": {
-        "repo": "repos\\more-itertools",
+        "repo": "repos/more-itertools",
         "base": "0c48044a70bae53fed919526bb1229d459a3e496",
         "commit": "842a2b17a8e3f78462fe20cd4a88abd32085c111",
         "test_files": [

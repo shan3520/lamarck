@@ -9,8 +9,10 @@ change ships).
 
 from __future__ import annotations
 
+import builtins
 import hashlib
 import json
+import os
 import re
 import subprocess
 from dataclasses import asdict, dataclass, field
@@ -90,7 +92,20 @@ class TaskSuite:
         return cls(tasks)
 
     def save(self, path: str | Path) -> None:
-        Path(path).write_text(json.dumps({"tasks": [t.to_dict() for t in self.tasks]}, indent=2), encoding="utf-8")
+        """Repo paths are written relative to the task file (the inverse of `load`), so a saved suite
+        stays portable and doesn't carry this machine's folder layout."""
+        path = Path(path)
+        items = []
+        for t in self.tasks:
+            d = t.to_dict()
+            repo = d.get("meta", {}).get("repo")
+            if repo and Path(repo).is_absolute():
+                try:
+                    d["meta"] = {**d["meta"], "repo": Path(os.path.relpath(repo, path.resolve().parent)).as_posix()}
+                except ValueError:
+                    pass  # different drive on Windows: keep it absolute
+            items.append(d)
+        path.write_text(json.dumps({"tasks": items}, indent=2), encoding="utf-8")
 
 
 @dataclass
@@ -231,8 +246,13 @@ def task_specific_literals(suite: TaskSuite) -> set[str]:
     for t in suite.tasks:
         for tok in set(_CODE_IDENT.findall(t.prompt)):
             code_counts[tok] = code_counts.get(tok, 0) + 1
-    literals |= {tok for tok, n in code_counts.items() if n == 1}
+    # Python's own names (ValueError, NameError...) are general knowledge, not one task's bug: a real
+    # run's critic blocked a generic "read the traceback" edit for mentioning ValueError
+    literals |= {tok for tok, n in code_counts.items() if n == 1 and tok not in _BUILTIN_NAMES}
     return literals
+
+
+_BUILTIN_NAMES = set(dir(builtins))
 
 
 _ID_TOKEN = re.compile(r"\b(?=[\w-]*\d)[\w-]{5,}\b")

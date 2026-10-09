@@ -69,3 +69,24 @@ def test_critic_rejects_code_identifiers_named_by_a_single_task():
     ok = Edit("append_rule", "rules.md", "- Run the failing tests before editing, and again before finishing.")
     assert "leakage" in critic.review([bad], budget=3)
     assert critic.review([ok], budget=3) is None
+
+
+def test_python_builtin_names_are_not_task_specific():
+    suite = TaskSuite([
+        Task("t1", "Raise ValueError when SignatureExpired", {"type": "exact", "value": "a"}),
+        Task("t2", "Fix the parser", {"type": "exact", "value": "b"}),
+    ])
+    lits = task_specific_literals(suite)
+    assert "SignatureExpired" in lits and "ValueError" not in lits
+
+
+def test_saved_suite_keeps_repo_paths_relative(tmp_path):
+    (tmp_path / "repos" / "lib").mkdir(parents=True)
+    f = tmp_path / "tasks.json"
+    f.write_text('{"tasks": [{"id": "t1", "prompt": "p", "verifier": {"type": "exact", "value": "x"}, "meta": {"repo": "repos/lib"}}]}', encoding="utf-8")
+    s = TaskSuite.load(f)
+    assert s.tasks[0].meta["repo"] == str((tmp_path / "repos" / "lib").resolve())
+    out = tmp_path / "out.json"
+    s.save(out)
+    assert '"repo": "repos/lib"' in out.read_text(encoding="utf-8")
+    assert TaskSuite.load(out).tasks[0].meta["repo"] == s.tasks[0].meta["repo"]
