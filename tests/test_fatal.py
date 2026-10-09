@@ -155,3 +155,29 @@ def test_persistent_per_minute_429_pauses_with_honest_label():
     exc = GatewayHTTPError(429, 'rate limit still exceeded after retries: {"status":429,"title":"Too Many Requests"}')
     assert is_fatal(exc)
     assert "daily" not in describe_fatal(exc) and "rate limit" in describe_fatal(exc)
+
+
+def test_timeout_before_any_model_reply_is_an_infra_error(tmp_path):
+    # NVIDIA free tier: the provider hung, the agent was killed by the timeout without one model reply,
+    # and 5 of 7 GLM attempts were scored as task failures
+    import subprocess
+
+    from lamarck.gitmine import MineConfig, mine_git_tasks
+    from lamarck.targets.command import CommandTarget
+
+    r = tmp_path / "repo"
+    r.mkdir()
+    for args in (["init", "-q"], ["config", "user.email", "t@e.com"], ["config", "user.name", "t"]):
+        subprocess.run(["git", "-C", str(r), *args], check=True)
+    (r / "a.py").write_text("x = 1\n")
+    subprocess.run(["git", "-C", str(r), "add", "."], check=True)
+    subprocess.run(["git", "-C", str(r), "commit", "-qm", "init"], check=True)
+    (r / "a.py").write_text("x = 2\n")
+    (r / "test_a.py").write_text("import a\nassert a.x == 2\n")
+    subprocess.run(["git", "-C", str(r), "add", "."], check=True)
+    subprocess.run(["git", "-C", str(r), "commit", "-qm", "x=2"], check=True)
+    task = mine_git_tasks(r, MineConfig(test_cmd="{python} {tests}", heldout_fraction=0.0)).tasks[0]
+    hung = CommandTarget(agent_cmd='{python} -c "import time; time.sleep(30)"', timeout=2).run(Harness({}), task, 0)
+    assert hung.error and "before the model replied" in hung.error
+    worked = CommandTarget(agent_cmd='{python} -c "import time; print(\'--- step 1\', flush=True); time.sleep(30)"', timeout=2).run(Harness({}), task, 0)
+    assert worked.error is None and not worked.passed  # slow after real work: a genuine failure

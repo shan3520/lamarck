@@ -92,6 +92,11 @@ class CommandTarget:
             if code == AGENT_CRASH_EXIT_CODE:  # a bug in the agent program, not the model failing the task
                 return Trial(task.id, False, detail="FAIL: infrastructure error (agent crashed)", trace=err[-2000:],
                              error="agent crashed: " + " ".join(err.split())[-300:])
+            if res.timed_out and "--- step" not in out:
+                # killed before the model answered even once: a provider hang (seen on NVIDIA's free tier,
+                # where 5 of 7 GLM attempts were scored as task failures), not the model failing the task
+                return Trial(task.id, False, detail="FAIL: infrastructure error (no model reply before the timeout)", trace=err[-2000:],
+                             error="agent timed out before the model replied once")
             found = _TOKENS.findall(out)
             tokens = int(found[-1]) if found else 0
             v = verify(task, out, workdir=wd)
