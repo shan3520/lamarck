@@ -51,6 +51,7 @@ Runs the seed harness on every task in the config's task file and keeps only **l
 | `--heldout` | (keep) | Re-assign the train/held-out split with this held-out fraction |
 | `--workers` | `evolve.workers` | Parallel agent runs |
 | `-y, --yes` | | Don't ask for confirmation |
+| `--wait` / `--max-wait` | off / 12 h | On a quota, throttle or network outage, wait and continue instead of pausing |
 
 Calibration uses its own seeds, and its rollouts are never reused by `run`. Tasks are *selected* on these outcomes, so reusing them would flatter every later candidate (regression to the mean). It is resumable: after a pause, rerun the same command.
 

@@ -187,13 +187,23 @@ def cmd_calibrate(args) -> int:
         print("Aborted.")
         return 1
     workers = args.workers or conf.get("evolve", {}).get("workers", 3)
-    try:
-        cals, _ = calibrate(target, harness, suite, k=args.k, workers=workers, cache=cache, low=args.low, high=args.high)
-    except Exception as exc:
-        if not is_fatal(exc):
-            raise
-        print(f"\nPaused: {describe_fatal(exc)}. {len(cache)} rollouts are saved; rerun the same command to continue.")
-        return 4
+    from .chat_compat import retry_hint
+
+    while True:
+        try:
+            cals, _ = calibrate(target, harness, suite, k=args.k, workers=workers, cache=cache, low=args.low, high=args.high)
+            break
+        except Exception as exc:
+            if not is_fatal(exc):
+                raise
+            # an overnight network outage paused a calibration for 7 h; with --wait it checks back instead
+            wait = (retry_hint(str(exc)) or 300.0) if args.wait else None
+            if wait is None:
+                print(f"\nPaused: {describe_fatal(exc)}. {len(cache)} rollouts are saved; rerun the same command to continue.")
+                return 4
+            wait = min(wait, args.max_wait * 3600)
+            print(f"\nPaused: {str(exc)[:300]}\nWaiting {wait / 60:.0f} min ({len(cache)} rollouts saved), then continuing...", flush=True)
+            time.sleep(wait + 30)
     print(table(cals))
     kept = select(suite, cals, args.heldout)
     kept.save(out)
@@ -331,6 +341,8 @@ def main(argv: list[str] | None = None) -> int:
     c.add_argument("--heldout", type=float, default=None, help="re-assign the train/held-out split with this held-out fraction")
     c.add_argument("--workers", type=int, help="parallel agent runs (default: evolve.workers from the config)")
     c.add_argument("-y", "--yes", action="store_true")
+    c.add_argument("--wait", action="store_true", help="on a quota, throttle or network outage, wait and continue instead of pausing")
+    c.add_argument("--max-wait", type=float, default=12.0, help="with --wait: longest single wait in hours (default 12)")
     c.set_defaults(fn=cmd_calibrate)
 
     r = sub.add_parser("run", help="evolve the harness")
