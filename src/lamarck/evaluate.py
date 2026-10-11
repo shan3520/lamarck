@@ -115,11 +115,17 @@ class TrialCache:
         self._data: dict[str, dict] = {}
         self._lock = threading.Lock()
         self.hits = 0
+        self._needs_newline = False
         if self.path and self.path.is_file():
-            for line in self.path.read_text(encoding="utf-8").splitlines():
+            text = self.path.read_text(encoding="utf-8")
+            for line in text.splitlines():
                 if line.strip():
-                    rec = json.loads(line)
+                    try:
+                        rec = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue  # a write cut off by a shutdown or power loss: that rollout is simply redone
                     self._data[rec["key"]] = rec["trial"]
+            self._needs_newline = bool(text) and not text.endswith("\n")
 
     @staticmethod
     def key(fingerprint: str, task_id: str, seed: int) -> str:
@@ -139,6 +145,9 @@ class TrialCache:
             if self.path:
                 self.path.parent.mkdir(parents=True, exist_ok=True)
                 with self.path.open("a", encoding="utf-8") as f:
+                    if self._needs_newline:  # never glue a new record onto a cut-off line
+                        f.write("\n")
+                        self._needs_newline = False
                     f.write(json.dumps({"key": key, "trial": d}, ensure_ascii=False) + "\n")
 
     def __len__(self) -> int:

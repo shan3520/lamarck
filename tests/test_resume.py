@@ -54,3 +54,20 @@ def test_trial_cache_round_trip(tmp_path):
     again = TrialCache(tmp_path / "t.jsonl")
     got = again.get("k1")
     assert got.passed and got.tokens == 5 and len(again) == 1 and again.get("missing") is None
+
+
+def test_cache_survives_a_write_cut_off_by_shutdown(tmp_path):
+    # a laptop shut down mid-write must not make the run unresumable
+    from lamarck.evaluate import TrialCache
+    from lamarck.targets.base import Trial
+
+    p = tmp_path / "trials.jsonl"
+    c = TrialCache(p)
+    c.put("a|t1|0", Trial("t1", True))
+    with p.open("a", encoding="utf-8") as f:
+        f.write('{"key": "a|t2|0", "trial": {"task_id": "t2", "pas')  # cut off
+    c2 = TrialCache(p)
+    assert c2.get("a|t1|0").passed and c2.get("a|t2|0") is None
+    c2.put("a|t2|0", Trial("t2", False))
+    c3 = TrialCache(p)
+    assert c3.get("a|t2|0") is not None and len(c3) == 2
