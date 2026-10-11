@@ -1,0 +1,138 @@
+[
+  {
+    "task_id": "git-177196d3a5",
+    "rate": 1.0,
+    "k": 4,
+    "zone": "solved",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-526b1ea029",
+    "rate": 0.75,
+    "k": 4,
+    "zone": "learnable",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-c30678d19e",
+    "rate": 0.5,
+    "k": 4,
+    "zone": "learnable",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-910a7a94ee",
+    "rate": 1.0,
+    "k": 4,
+    "zone": "solved",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-cf6cd3dad4",
+    "rate": 0.75,
+    "k": 4,
+    "zone": "learnable",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-2f23599bfb",
+    "rate": 0.75,
+    "k": 4,
+    "zone": "learnable",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-0e6acdf9b6",
+    "rate": 1.0,
+    "k": 4,
+    "zone": "solved",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-71b46b06fb",
+    "rate": 0.75,
+    "k": 4,
+    "zone": "learnable",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-867798d4ce",
+    "rate": 0.75,
+    "k": 4,
+    "zone": "learnable",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-adeda34bd1",
+    "rate": 0.75,
+    "k": 4,
+    "zone": "learnable",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-fb33cf2c24",
+    "rate": 1.0,
+    "k": 4,
+    "zone": "solved",
+    "split": "heldout",
+    "errors": 0
+  },
+  {
+    "task_id": "git-d992be0de9",
+    "rate": 0.5,
+    "k": 4,
+    "zone": "learnable",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-93c1cf8484",
+    "rate": 0.75,
+    "k": 4,
+    "zone": "learnable",
+    "split": "heldout",
+    "errors": 0
+  },
+  {
+    "task_id": "git-958990e22c",
+    "rate": 0.75,
+    "k": 4,
+    "zone": "learnable",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-37ae0d6dd5",
+    "rate": 0.5,
+    "k": 4,
+    "zone": "learnable",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-cf186b5de4",
+    "rate": 1.0,
+    "k": 4,
+    "zone": "solved",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-a16e9c1c9b",
+    "rate": 0.5,
+    "k": 4,
+    "zone": "learnable",
+    "split": "heldout",
+    "errors": 0
+  }
+]
