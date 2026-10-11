@@ -169,11 +169,21 @@ def _load_project(config: str):
     return cfg_path, base, conf, suite, harness, via
 
 
+def _stay_awake(args) -> None:
+    """Long runs stalled for hours when the PC idle-slept (frozen agents, network drops on wake)."""
+    if not getattr(args, "allow_sleep", False):
+        from .awake import keep_awake
+
+        if keep_awake():
+            print("Keeping this computer awake while the run is in progress (--allow-sleep to disable).")
+
+
 def cmd_calibrate(args) -> int:
     from .calibrate import calibrate, select, table
     from .evaluate import TrialCache
 
     cfg_path, base, conf, suite, harness, _ = _load_project(args.config)
+    _stay_awake(args)
     if conf["target"].get("type") == "simulated":
         raise SystemExit("calibration needs a real target (the simulated one has no task difficulty to measure)")
     target = build_target(conf["target"])
@@ -224,6 +234,7 @@ def cmd_run(args) -> int:
             raise SystemExit(f"nothing to resume: {meta_path} not found")
         args.config, args.out = json.loads(meta_path.read_text(encoding="utf-8"))["config"], args.resume
     cfg_path, base, conf, suite, harness, via = _load_project(args.config)
+    _stay_awake(args)
     if not suite.heldout():
         suite = suite.assign_splits(0.3)
         print("No held-out split in the task file; assigned 30% of tasks to held-out deterministically.")
@@ -343,6 +354,7 @@ def main(argv: list[str] | None = None) -> int:
     c.add_argument("-y", "--yes", action="store_true")
     c.add_argument("--wait", action="store_true", help="on a quota, throttle or network outage, wait and continue instead of pausing")
     c.add_argument("--max-wait", type=float, default=12.0, help="with --wait: longest single wait in hours (default 12)")
+    c.add_argument("--allow-sleep", action="store_true", help="let the computer idle-sleep during the run")
     c.set_defaults(fn=cmd_calibrate)
 
     r = sub.add_parser("run", help="evolve the harness")
@@ -352,6 +364,7 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("-y", "--yes", action="store_true", help="don't ask before spending on paid models")
     r.add_argument("--wait", action="store_true", help="when a rolling daily quota is reached, wait for it and continue instead of pausing")
     r.add_argument("--max-wait", type=float, default=12.0, help="with --wait: longest single wait in hours (default 12)")
+    r.add_argument("--allow-sleep", action="store_true", help="let the computer idle-sleep during the run")
     r.set_defaults(fn=cmd_run)
 
     args = p.parse_args(argv)

@@ -66,6 +66,7 @@ Evolves the harness.
 | `-y, --yes` | Don't ask for confirmation before calling models |
 | `--wait` | When a rolling daily quota is reached, wait until it frees up and continue, instead of pausing |
 | `--max-wait` | With `--wait`: longest single wait, in hours (default 12) |
+| `--allow-sleep` | Let the computer idle-sleep. By default `run` and `calibrate` ask the OS not to idle-sleep while they run (Windows); a sleeping PC freezes agents mid-attempt and drops the network on every wake |
 
 `.env` is loaded from the config's folder and the current folder. Variables already set in the environment take precedence.
 
