@@ -1,0 +1,349 @@
+{
+  "tasks": [
+    {
+      "id": "git-f89d7a3331",
+      "prompt": "Issue 1304: make ichunked match chunked for n=0 and negative n\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): tests/test_more.py\nRun them with: {python} -m pytest -q tests/test_more.py",
+      "verifier": {
+        "type": "command",
+        "cmd": "{python} -m pytest -q tests/test_more.py"
+      },
+      "split": "heldout",
+      "tags": [
+        "git"
+      ],
+      "meta": {
+        "repo": "repos/more-itertools",
+        "base": "790bb0bb2c03e7a07282e5f16f4b1fde35b8fcf5",
+        "commit": "f89d7a3331ba6b5421273e556c0a738e3dd1dd35",
+        "test_files": [
+          "tests/test_more.py"
+        ],
+        "src_files": [
+          "docs/versions.rst",
+          "more_itertools/more.py"
+        ]
+      }
+    },
+    {
+      "id": "git-ce676d2413",
+      "prompt": "Do not yield an empty list for an empty iterable when maxsplit is 0\n\nsplit_before, split_after and split_when share a maxsplit == 0 fast path\nthat yields list(iterable) unconditionally, so an empty iterable produced\n[[]] while every other maxsplit produced []. Their slow paths return\nnothing for an empty iterable - split_before and split_after via 'if buf',\nsplit_when via its StopIteration early return - and test_empty_collection\nand test_empty_iterable already pin that, but neither passed maxsplit, so\nneither reached the fast path.\n\nsplit_at is left alone: its slow path yields the trailing empty list, which\nmatches ''.split(',', 0) == [''].\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): tests/test_more.py\nRun them with: {python} -m pytest -q tests/test_more.py",
+      "verifier": {
+        "type": "command",
+        "cmd": "{python} -m pytest -q tests/test_more.py"
+      },
+      "split": "train",
+      "tags": [
+        "git"
+      ],
+      "meta": {
+        "repo": "repos/more-itertools",
+        "base": "d92f081a089714e0aa92434c797fdd1a06da1290",
+        "commit": "ce676d24136e6efa932df8a4f3bf4801b89e1dd0",
+        "test_files": [
+          "tests/test_more.py"
+        ],
+        "src_files": [
+          "docs/versions.rst",
+          "more_itertools/more.py"
+        ]
+      }
+    },
+    {
+      "id": "git-f51a53bfd2",
+      "prompt": "fix: handle empty interleave_evenly input\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): tests/test_more.py\nRun them with: {python} -m pytest -q tests/test_more.py",
+      "verifier": {
+        "type": "command",
+        "cmd": "{python} -m pytest -q tests/test_more.py"
+      },
+      "split": "heldout",
+      "tags": [
+        "git"
+      ],
+      "meta": {
+        "repo": "repos/more-itertools",
+        "base": "5d946b3590bfe92f1465c1b9b9830dd434745c84",
+        "commit": "f51a53bfd2fe9504063a33ef5f4a73e30d82d0e2",
+        "test_files": [
+          "tests/test_more.py"
+        ],
+        "src_files": [
+          "more_itertools/more.py"
+        ]
+      }
+    },
+    {
+      "id": "git-f91c7339f1",
+      "prompt": "Add sized_iterator class\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): tests/test_more.py\nRun them with: {python} -m pytest -q tests/test_more.py",
+      "verifier": {
+        "type": "command",
+        "cmd": "{python} -m pytest -q tests/test_more.py"
+      },
+      "split": "heldout",
+      "tags": [
+        "git"
+      ],
+      "meta": {
+        "repo": "repos/more-itertools",
+        "base": "23785eb2bed6082cf8268d00b276af47c94cabfd",
+        "commit": "f91c7339f16392dd01702b0259bf03a017acc974",
+        "test_files": [
+          "tests/test_more.py"
+        ],
+        "src_files": [
+          "docs/api.rst",
+          "more_itertools/more.py",
+          "more_itertools/more.pyi"
+        ]
+      }
+    },
+    {
+      "id": "git-b0106bae26",
+      "prompt": "Add repeat keyword argument to product_index\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): tests/test_more.py\nRun them with: {python} -m pytest -q tests/test_more.py",
+      "verifier": {
+        "type": "command",
+        "cmd": "{python} -m pytest -q tests/test_more.py"
+      },
+      "split": "train",
+      "tags": [
+        "git"
+      ],
+      "meta": {
+        "repo": "repos/more-itertools",
+        "base": "37ae0d6dd5e9bcc6f36979c94738d667d64d8968",
+        "commit": "b0106bae267a9b257ee1cb9241df706b68a81a0e",
+        "test_files": [
+          "tests/test_more.py"
+        ],
+        "src_files": [
+          "more_itertools/more.py",
+          "more_itertools/more.pyi"
+        ]
+      }
+    },
+    {
+      "id": "git-619ab9ce9a",
+      "prompt": "Add baseset to powerset_of_sets\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): tests/test_more.py\nRun them with: {python} -m pytest -q tests/test_more.py",
+      "verifier": {
+        "type": "command",
+        "cmd": "{python} -m pytest -q tests/test_more.py"
+      },
+      "split": "heldout",
+      "tags": [
+        "git"
+      ],
+      "meta": {
+        "repo": "repos/more-itertools",
+        "base": "e1c36c297359dd6790f9c37f93b828b0fabbae7f",
+        "commit": "619ab9ce9a0b37ca3a30e7ea792a9f6c7f32f142",
+        "test_files": [
+          "tests/test_more.py"
+        ],
+        "src_files": [
+          "more_itertools/more.py",
+          "more_itertools/more.pyi"
+        ]
+      }
+    },
+    {
+      "id": "git-e39ae39c0a",
+      "prompt": "Reject by ID\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): tests/test_more.py\nRun them with: {python} -m pytest -q tests/test_more.py",
+      "verifier": {
+        "type": "command",
+        "cmd": "{python} -m pytest -q tests/test_more.py"
+      },
+      "split": "train",
+      "tags": [
+        "git"
+      ],
+      "meta": {
+        "repo": "repos/more-itertools",
+        "base": "45b6bf81e12613bdefb23c2ab888c4dd0deb6212",
+        "commit": "e39ae39c0af6c9fde93062d3084c8b967a171508",
+        "test_files": [
+          "tests/test_more.py"
+        ],
+        "src_files": [
+          "more_itertools/more.py"
+        ]
+      }
+    },
+    {
+      "id": "git-d63a26e56e",
+      "prompt": "first_true: pred -> predicate\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): tests/test_recipes.py\nRun them with: {python} -m pytest -q tests/test_recipes.py",
+      "verifier": {
+        "type": "command",
+        "cmd": "{python} -m pytest -q tests/test_recipes.py"
+      },
+      "split": "train",
+      "tags": [
+        "git"
+      ],
+      "meta": {
+        "repo": "repos/more-itertools",
+        "base": "d0c20f594667738b714a1f7786da82e0de70fbf5",
+        "commit": "d63a26e56eac21ef874d243d2230123464539ed5",
+        "test_files": [
+          "tests/test_recipes.py"
+        ],
+        "src_files": [
+          "more_itertools/more.py",
+          "more_itertools/recipes.py",
+          "more_itertools/recipes.pyi"
+        ]
+      }
+    },
+    {
+      "id": "git-1b7f033d50",
+      "prompt": "Issue 1096: Concurrent tee\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): tests/test_more.py\nRun them with: {python} -m pytest -q tests/test_more.py",
+      "verifier": {
+        "type": "command",
+        "cmd": "{python} -m pytest -q tests/test_more.py"
+      },
+      "split": "train",
+      "tags": [
+        "git"
+      ],
+      "meta": {
+        "repo": "repos/more-itertools",
+        "base": "4cbe6f9d1c78780d024fa626407015448d4fd049",
+        "commit": "1b7f033d50589295f9f9b600e2d76dddf29af920",
+        "test_files": [
+          "tests/test_more.py"
+        ],
+        "src_files": [
+          "README.rst",
+          "docs/api.rst",
+          "more_itertools/more.py",
+          "more_itertools/more.pyi"
+        ]
+      }
+    },
+    {
+      "id": "git-d64a7d6971",
+      "prompt": "Raise for negative tail sizes on sized iterables\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): tests/test_recipes.py\nRun them with: {python} -m pytest -q tests/test_recipes.py",
+      "verifier": {
+        "type": "command",
+        "cmd": "{python} -m pytest -q tests/test_recipes.py"
+      },
+      "split": "train",
+      "tags": [
+        "git"
+      ],
+      "meta": {
+        "repo": "repos/more-itertools",
+        "base": "5d946b3590bfe92f1465c1b9b9830dd434745c84",
+        "commit": "d64a7d6971bfd31c5719d02f0001e58de85683d1",
+        "test_files": [
+          "tests/test_recipes.py"
+        ],
+        "src_files": [
+          "more_itertools/recipes.py"
+        ]
+      }
+    },
+    {
+      "id": "git-842a2b17a8",
+      "prompt": "Add subfactorial()\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): tests/test_more.py\nRun them with: {python} -m pytest -q tests/test_more.py",
+      "verifier": {
+        "type": "command",
+        "cmd": "{python} -m pytest -q tests/test_more.py"
+      },
+      "split": "train",
+      "tags": [
+        "git"
+      ],
+      "meta": {
+        "repo": "repos/more-itertools",
+        "base": "0c48044a70bae53fed919526bb1229d459a3e496",
+        "commit": "842a2b17a8e3f78462fe20cd4a88abd32085c111",
+        "test_files": [
+          "tests/test_more.py"
+        ],
+        "src_files": [
+          "README.rst",
+          "docs/api.rst",
+          "more_itertools/more.py",
+          "more_itertools/more.pyi"
+        ]
+      }
+    },
+    {
+      "id": "git-52cfcfedc3",
+      "prompt": "Revert \"Remove pairwise()\"\n\nThis reverts commit 196acd2325ff478338e97870173c74c15e9d41b2.\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): tests/test_recipes.py\nRun them with: {python} -m pytest -q tests/test_recipes.py",
+      "verifier": {
+        "type": "command",
+        "cmd": "{python} -m pytest -q tests/test_recipes.py"
+      },
+      "split": "heldout",
+      "tags": [
+        "git"
+      ],
+      "meta": {
+        "repo": "repos/more-itertools",
+        "base": "5b43c0dc5f67713130ab534d448f8db1cf493e09",
+        "commit": "52cfcfedc31060138c1a9f691bc6aa20b457ec12",
+        "test_files": [
+          "tests/test_recipes.py"
+        ],
+        "src_files": [
+          "README.rst",
+          "docs/api.rst",
+          "more_itertools/recipes.py",
+          "more_itertools/recipes.pyi"
+        ]
+      }
+    },
+    {
+      "id": "git-4f399222d0",
+      "prompt": "Issue 1093: Add serialize()\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): tests/test_more.py\nRun them with: {python} -m pytest -q tests/test_more.py",
+      "verifier": {
+        "type": "command",
+        "cmd": "{python} -m pytest -q tests/test_more.py"
+      },
+      "split": "heldout",
+      "tags": [
+        "git"
+      ],
+      "meta": {
+        "repo": "repos/more-itertools",
+        "base": "130d1ac88eff33084b14759402a4f8ba1d02c6d7",
+        "commit": "4f399222d0b7953856db06d7f269bd3ede9e32e7",
+        "test_files": [
+          "tests/test_more.py"
+        ],
+        "src_files": [
+          "README.rst",
+          "docs/api.rst",
+          "more_itertools/more.py",
+          "more_itertools/more.pyi"
+        ]
+      }
+    },
+    {
+      "id": "git-ccf96ac64c",
+      "prompt": "Issue 1070: Add random derangements\n\n\nImplement this change in the repository. These tests describe the expected behavior and must pass (do not modify them): tests/test_recipes.py\nRun them with: {python} -m pytest -q tests/test_recipes.py",
+      "verifier": {
+        "type": "command",
+        "cmd": "{python} -m pytest -q tests/test_recipes.py"
+      },
+      "split": "train",
+      "tags": [
+        "git"
+      ],
+      "meta": {
+        "repo": "repos/more-itertools",
+        "base": "b26c5b3a8d44a6bc026b49190cc423db72f91b63",
+        "commit": "ccf96ac64c4d6489d95a4bbf67b00999d341bdd2",
+        "test_files": [
+          "tests/test_recipes.py"
+        ],
+        "src_files": [
+          "README.rst",
+          "docs/api.rst",
+          "more_itertools/recipes.py",
+          "more_itertools/recipes.pyi"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,594 @@
+[
+  {
+    "task_id": "git-7f4dcf83a0",
+    "rate": 0.0,
+    "k": 2,
+    "zone": "wall",
+    "split": "heldout",
+    "errors": 0
+  },
+  {
+    "task_id": "git-177196d3a5",
+    "rate": 1.0,
+    "k": 2,
+    "zone": "solved",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-526b1ea029",
+    "rate": 1.0,
+    "k": 2,
+    "zone": "solved",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-53f34c9a8f",
+    "rate": 0.0,
+    "k": 2,
+    "zone": "wall",
+    "split": "heldout",
+    "errors": 0
+  },
+  {
+    "task_id": "git-c30678d19e",
+    "rate": 1.0,
+    "k": 2,
+    "zone": "solved",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-910a7a94ee",
+    "rate": 1.0,
+    "k": 2,
+    "zone": "solved",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-6c58e969a5",
+    "rate": 0.0,
+    "k": 2,
+    "zone": "wall",
+    "split": "heldout",
+    "errors": 0
+  },
+  {
+    "task_id": "git-f966a62e4c",
+    "rate": 0.0,
+    "k": 2,
+    "zone": "wall",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-0635526a82",
+    "rate": 0.0,
+    "k": 2,
+    "zone": "wall",
+    "split": "heldout",
+    "errors": 0
+  },
+  {
+    "task_id": "git-cf6cd3dad4",
+    "rate": 1.0,
+    "k": 2,
+    "zone": "solved",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-8f9a550a90",
+    "rate": 0.0,
+    "k": 2,
+    "zone": "wall",
+    "split": "heldout",
+    "errors": 0
+  },
+  {
+    "task_id": "git-2f23599bfb",
+    "rate": 1.0,
+    "k": 2,
+    "zone": "solved",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-548b14fab3",
+    "rate": 0.0,
+    "k": 2,
+    "zone": "wall",
+    "split": "heldout",
+    "errors": 0
+  },
+  {
+    "task_id": "git-df37f92c53",
+    "rate": 0.0,
+    "k": 2,
+    "zone": "wall",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-f89d7a3331",
+    "rate": 0.5,
+    "k": 2,
+    "zone": "learnable",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-3eb4053e1a",
+    "rate": 0.0,
+    "k": 2,
+    "zone": "wall",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-670b715b30",
+    "rate": 0.0,
+    "k": 2,
+    "zone": "wall",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-2b8d5cddce",
+    "rate": 0.0,
+    "k": 2,
+    "zone": "wall",
+    "split": "heldout",
+    "errors": 0
+  },
+  {
+    "task_id": "git-def2dabea8",
+    "rate": 0.0,
+    "k": 2,
+    "zone": "wall",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-e426d256b9",
+    "rate": 0.0,
+    "k": 2,
+    "zone": "wall",
+    "split": "heldout",
+    "errors": 0
+  },
+  {
+    "task_id": "git-752799b5c8",
+    "rate": 0.0,
+    "k": 2,
+    "zone": "wall",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-6b1907de29",
+    "rate": 0.0,
+    "k": 2,
+    "zone": "wall",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-1fd388bc23",
+    "rate": 0.0,
+    "k": 2,
+    "zone": "wall",
+    "split": "heldout",
+    "errors": 0
+  },
+  {
+    "task_id": "git-ce676d2413",
+    "rate": 0.5,
+    "k": 2,
+    "zone": "learnable",
+    "split": "heldout",
+    "errors": 0
+  },
+  {
+    "task_id": "git-7847d4324a",
+    "rate": 0.0,
+    "k": 2,
+    "zone": "wall",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-dc2664b4a7",
+    "rate": 0.0,
+    "k": 2,
+    "zone": "wall",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-0e6acdf9b6",
+    "rate": 1.0,
+    "k": 2,
+    "zone": "solved",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-069b30002a",
+    "rate": 0.0,
+    "k": 2,
+    "zone": "wall",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-f51a53bfd2",
+    "rate": 0.5,
+    "k": 2,
+    "zone": "learnable",
+    "split": "heldout",
+    "errors": 0
+  },
+  {
+    "task_id": "git-ba7ef9425f",
+    "rate": 0.0,
+    "k": 2,
+    "zone": "wall",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-71b46b06fb",
+    "rate": 1.0,
+    "k": 2,
+    "zone": "solved",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-18c57c720f",
+    "rate": 0.0,
+    "k": 2,
+    "zone": "wall",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-f91c7339f1",
+    "rate": 0.5,
+    "k": 2,
+    "zone": "learnable",
+    "split": "heldout",
+    "errors": 0
+  },
+  {
+    "task_id": "git-b0aa91efbb",
+    "rate": 0.0,
+    "k": 2,
+    "zone": "wall",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-867798d4ce",
+    "rate": 1.0,
+    "k": 2,
+    "zone": "solved",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-2af32e1202",
+    "rate": 0.0,
+    "k": 2,
+    "zone": "wall",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-adeda34bd1",
+    "rate": 1.0,
+    "k": 2,
+    "zone": "solved",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-120ee0a599",
+    "rate": 0.0,
+    "k": 2,
+    "zone": "wall",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-5c8336c5f3",
+    "rate": 0.0,
+    "k": 2,
+    "zone": "wall",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-fb33cf2c24",
+    "rate": 1.0,
+    "k": 2,
+    "zone": "solved",
+    "split": "heldout",
+    "errors": 0
+  },
+  {
+    "task_id": "git-d992be0de9",
+    "rate": 1.0,
+    "k": 2,
+    "zone": "solved",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-93c1cf8484",
+    "rate": 1.0,
+    "k": 2,
+    "zone": "solved",
+    "split": "heldout",
+    "errors": 0
+  },
+  {
+    "task_id": "git-db4f41b280",
+    "rate": 0.0,
+    "k": 2,
+    "zone": "wall",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-06f3181912",
+    "rate": 0.0,
+    "k": 2,
+    "zone": "wall",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-073d23421b",
+    "rate": 0.0,
+    "k": 2,
+    "zone": "wall",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-b0106bae26",
+    "rate": 0.5,
+    "k": 2,
+    "zone": "learnable",
+    "split": "heldout",
+    "errors": 0
+  },
+  {
+    "task_id": "git-428a0a2c8d",
+    "rate": 0.0,
+    "k": 2,
+    "zone": "wall",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-619ab9ce9a",
+    "rate": 0.5,
+    "k": 2,
+    "zone": "learnable",
+    "split": "heldout",
+    "errors": 0
+  },
+  {
+    "task_id": "git-5bd5c263f9",
+    "rate": 0.0,
+    "k": 2,
+    "zone": "wall",
+    "split": "heldout",
+    "errors": 0
+  },
+  {
+    "task_id": "git-6887a7bd5a",
+    "rate": 0.0,
+    "k": 2,
+    "zone": "wall",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-e39ae39c0a",
+    "rate": 0.5,
+    "k": 2,
+    "zone": "learnable",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-958990e22c",
+    "rate": 1.0,
+    "k": 2,
+    "zone": "solved",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-43decdd760",
+    "rate": 0.0,
+    "k": 2,
+    "zone": "wall",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-edb3346f83",
+    "rate": 0.0,
+    "k": 2,
+    "zone": "wall",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-d63a26e56e",
+    "rate": 0.5,
+    "k": 2,
+    "zone": "learnable",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-def2d821c0",
+    "rate": 0.0,
+    "k": 2,
+    "zone": "wall",
+    "split": "heldout",
+    "errors": 0
+  },
+  {
+    "task_id": "git-37ae0d6dd5",
+    "rate": 1.0,
+    "k": 2,
+    "zone": "solved",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-1b7f033d50",
+    "rate": 0.5,
+    "k": 2,
+    "zone": "learnable",
+    "split": "heldout",
+    "errors": 0
+  },
+  {
+    "task_id": "git-cf186b5de4",
+    "rate": 1.0,
+    "k": 2,
+    "zone": "solved",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-21d3d88359",
+    "rate": 0.0,
+    "k": 2,
+    "zone": "wall",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-7f21fb1411",
+    "rate": 0.0,
+    "k": 2,
+    "zone": "wall",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-cca32949f1",
+    "rate": 0.0,
+    "k": 2,
+    "zone": "wall",
+    "split": "heldout",
+    "errors": 0
+  },
+  {
+    "task_id": "git-d64a7d6971",
+    "rate": 0.5,
+    "k": 2,
+    "zone": "learnable",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-842a2b17a8",
+    "rate": 0.5,
+    "k": 2,
+    "zone": "learnable",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-52cfcfedc3",
+    "rate": 0.5,
+    "k": 2,
+    "zone": "learnable",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-8089263d23",
+    "rate": 0.0,
+    "k": 2,
+    "zone": "wall",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-be5793a55f",
+    "rate": 0.0,
+    "k": 2,
+    "zone": "wall",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-d9adeb4e31",
+    "rate": 0.0,
+    "k": 2,
+    "zone": "wall",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-5e6ae76a61",
+    "rate": 0.0,
+    "k": 2,
+    "zone": "wall",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-4f399222d0",
+    "rate": 0.5,
+    "k": 2,
+    "zone": "learnable",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-ccf96ac64c",
+    "rate": 0.5,
+    "k": 2,
+    "zone": "learnable",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-f8ccab2285",
+    "rate": 0.0,
+    "k": 2,
+    "zone": "wall",
+    "split": "train",
+    "errors": 0
+  },
+  {
+    "task_id": "git-a16e9c1c9b",
+    "rate": 1.0,
+    "k": 2,
+    "zone": "solved",
+    "split": "heldout",
+    "errors": 0
+  },
+  {
+    "task_id": "git-edb9970d02",
+    "rate": 0.0,
+    "k": 2,
+    "zone": "wall",
+    "split": "heldout",
+    "errors": 0
+  }
+]
