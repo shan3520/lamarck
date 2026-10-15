@@ -181,3 +181,35 @@ def test_timeout_before_any_model_reply_is_an_infra_error(tmp_path):
     assert hung.error and "before the model replied" in hung.error
     worked = CommandTarget(agent_cmd='{python} -c "import time; print(\'--- step 1\', flush=True); time.sleep(30)"', timeout=2).run(Harness({}), task, 0)
     assert worked.error is None and not worked.passed  # slow after real work: a genuine failure
+
+
+def test_network_budget_resets_after_each_recovered_outage(monkeypatch):
+    # a connection dropping every ~20 min must not add up to a fatal outage across one long attempt
+    import io
+    import urllib.error
+
+    from lamarck import chat_compat
+
+    monkeypatch.setenv("GROQ_API_KEY", "gsk_test")
+    client = chat_compat.ChatClient.for_provider("groq")
+    client.network_wait = 20
+    monkeypatch.setattr(chat_compat.time, "sleep", lambda s: None)
+
+    class Resp(io.BytesIO):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    state = {"n": 0}
+
+    def flaky(req, timeout):  # every request first hits two DNS failures, then succeeds
+        state["n"] += 1
+        if state["n"] % 3:
+            raise urllib.error.URLError("[Errno 11001] getaddrinfo failed")
+        return Resp(b'{"ok": 1}')
+
+    monkeypatch.setattr(chat_compat.urllib.request, "urlopen", flaky)
+    for _ in range(10):  # 10 outages x 15 s each = 150 s in total, far above the 20 s per-outage budget
+        assert client._post("/x", {}) == {"ok": 1}

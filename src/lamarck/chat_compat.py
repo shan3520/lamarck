@@ -86,7 +86,10 @@ class ChatClient:
     api_key: str
     max_retries: int = 8
     quota_wait: float = 0.0  # seconds this client may spend waiting out per-day limits before giving up
-    network_wait: float = 600.0  # seconds to keep retrying through a network outage before giving up
+    # Seconds to keep retrying through ONE network outage before giving up; the clock resets once a request
+    # succeeds. (A per-attempt total of 600 s let a connection that dropped every ~20 min kill every
+    # 15-60 min attempt: 4 hours without a saved rollout in a real run.)
+    network_wait: float = 1800.0
     timeout: float = 180.0
 
     @classmethod
@@ -100,6 +103,7 @@ class ChatClient:
         return cls(provider, base, key)
 
     _net_tries: int = 0
+    _net_spent: float = 0.0
 
     def chat(self, *, model: str, system: str, user: str, max_tokens: int, effort: str | None, json_mode: bool, shell_tool: bool = False) -> dict:
         body: dict = {
@@ -137,7 +141,9 @@ class ChatClient:
             )
             try:
                 with urllib.request.urlopen(req, timeout=self.timeout) as resp:
-                    return json.loads(resp.read())
+                    body = json.loads(resp.read())
+                self._net_tries, self._net_spent = 0, 0.0  # connection is back: the next outage gets a full budget
+                return body
             except urllib.error.HTTPError as exc:
                 msg = exc.read().decode("utf-8", "replace")[:500]
                 if exc.code == 429 and not _DAILY.search(msg) and attempt < self.max_retries:
@@ -166,8 +172,8 @@ class ChatClient:
                 # using up normal retries; if it persists, raise status 0, which callers treat as
                 # fatal ("pause the run"), never as the agent failing the task.
                 pause = min(60.0, 5.0 * 2 ** min(self._net_tries, 4))
-                if pause <= self.network_wait:
-                    self.network_wait -= pause
+                if self._net_spent + pause <= self.network_wait:
+                    self._net_spent += pause
                     self._net_tries += 1
                     time.sleep(pause)
                     attempt -= 1
