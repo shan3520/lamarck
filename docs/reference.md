@@ -55,6 +55,17 @@ Runs the seed harness on every task in the config's task file and keeps only **l
 
 Calibration uses its own seeds, and its rollouts are never reused by `run`. Tasks are *selected* on these outcomes, so reusing them would flatter every later candidate (regression to the mean). It is resumable: after a pause, rerun the same command.
 
+### `lamarck confirm RUN_DIR`
+One **pre-registered** re-test of a finished run's held-out verdict, for when it lands inside the noise band. The seed and best harnesses get `--extra-k` more rollouts on the *same* held-out tasks, with seeds the run never used. These are pooled with the run's own held-out rollouts, and the run's gate is applied once.
+
+- The plan (tasks, rollouts, seeds, rule) is written to `RUN_DIR/confirmation_plan.json` before anything runs, and it can't be changed afterwards.
+- The result goes to `RUN_DIR/confirmation.json`. A second confirmation of the same run is refused: re-testing until something passes is p-hacking.
+
+| Option | Default | Meaning |
+|---|---|---|
+| `--extra-k` | 8 | New rollouts per held-out task and harness |
+| `-y`, `--wait`, `--max-wait`, `--allow-sleep` | | As for `run` |
+
 ### `lamarck run`
 Evolves the harness.
 

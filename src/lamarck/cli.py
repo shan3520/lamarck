@@ -4,6 +4,7 @@
     lamarck init DIR [--from CLAUDE.md]  scaffold a project (harness + config)
     lamarck mine-git --repo PATH         mine verified tasks from git history
     lamarck calibrate -c lamarck.json    keep only tasks the agent sometimes solves
+    lamarck confirm RUN_DIR              one pre-registered re-test of a run's held-out verdict
     lamarck run -c lamarck.json          evolve the harness; writes a run directory
 """
 
@@ -227,6 +228,77 @@ def cmd_calibrate(args) -> int:
     return 0
 
 
+def cmd_confirm(args) -> int:
+    """A single, pre-registered re-test of a finished run's held-out verdict (see lamarck/confirm.py)."""
+    from .archive import Archive
+    from .chat_compat import retry_hint
+    from .confirm import HELDOUT_SEED, as_dict, confirm
+    from .evaluate import TrialCache
+
+    run = Path(args.run)
+    done_path, plan_path = run / "confirmation.json", run / "confirmation_plan.json"
+    if done_path.exists():
+        print(done_path.read_text(encoding="utf-8"))
+        print("This run was already confirmed. Confirmation is a single pre-registered look; it is not repeated.")
+        return 1
+    summary = json.loads((run / "summary.json").read_text(encoding="utf-8"))
+    if summary["best"] == "n0000":
+        print("Nothing to confirm: no variant beat the seed harness on train.")
+        return 1
+    config = json.loads((run / "run_meta.json").read_text(encoding="utf-8"))["config"]
+    cfg_path, base, conf, suite, harness, _ = _load_project(config)
+    _stay_awake(args)
+    if not suite.heldout():
+        suite = suite.assign_splits(0.3)
+    gate = _pick(GateConfig, conf.get("gate", {}))
+    ecfg = _pick(EvolveConfig, {**conf.get("evolve", {}), "gate": gate})
+    k_done = ecfg.k_heldout
+    plan = {
+        "run": str(run), "best": summary["best"], "heldout_tasks": [t.id for t in suite.heldout()],
+        "k_done": k_done, "extra_k": args.extra_k, "seeds": [HELDOUT_SEED + k_done, HELDOUT_SEED + k_done + args.extra_k - 1],
+        "rule": f"pool the run's {k_done} held-out rollouts per task with {args.extra_k} new ones (new seeds) for the seed and best "
+                f"harnesses; SHIP only if the held-out gain exceeds noise_mult ({gate.noise_mult}) x the combined bootstrap noise band. One look only.",
+        "registered": time.strftime("%Y-%m-%d %H:%M"),
+    }
+    if plan_path.exists():
+        old = json.loads(plan_path.read_text(encoding="utf-8"))
+        if (old["extra_k"], old["best"]) != (plan["extra_k"], plan["best"]):
+            raise SystemExit(f"A different confirmation was already registered ({plan_path}); the plan can't be changed.")
+        plan = old
+    else:
+        plan_path.write_text(json.dumps(plan, indent=2) + "\n", encoding="utf-8")
+    print(f"Pre-registered plan ({plan_path}):\n  {plan['rule']}")
+    n_new = 2 * len(suite.heldout()) * args.extra_k
+    print(f"{len(suite.heldout())} held-out tasks; {n_new} new agent runs.")
+    if not args.yes and input("Run the confirmation now? [y/N] ").strip().lower() not in ("y", "yes"):
+        print("Aborted (the plan stays registered).")
+        return 1
+    target = build_target(conf["target"])
+    cache = TrialCache(run / "trials.jsonl")
+    archive = Archive.load(run / "archive.json")
+    workers = conf.get("evolve", {}).get("workers", 3)
+    while True:
+        try:
+            c = confirm(target, archive, summary["best"], suite.heldout(), k_done, args.extra_k, gate, cache, workers)
+            break
+        except Exception as exc:
+            if not is_fatal(exc) or not args.wait:
+                if is_fatal(exc):
+                    print(f"\nPaused: {describe_fatal(exc)}. Progress is saved; rerun the same command to continue.")
+                    return 4
+                raise
+            wait = min(retry_hint(str(exc)) or 300.0, args.max_wait * 3600)
+            print(f"\nPaused: {str(exc)[:300]}\nWaiting {wait / 60:.0f} min, then continuing...", flush=True)
+            time.sleep(wait + 30)
+    done_path.write_text(json.dumps({**as_dict(c), "plan": plan}, indent=2) + "\n", encoding="utf-8")
+    verdict = "SHIP" if c.ship else "DO NOT SHIP"
+    print(f"\nConfirmation on {c.tasks} never-seen tasks x {c.k_total} rollouts per harness:")
+    print(f"  full-pass rate: {c.seed_pass * 100:.1f}% -> {c.best_pass * 100:.1f}%")
+    print(f"  held-out: {c.delta_pts:+.1f} pts, noise {c.noise_pts:.1f} pts -> {verdict} ({c.reason})")
+    print(f"Saved: {done_path}")
+    return 0 if c.ship else 2
+
+
 def cmd_run(args) -> int:
     if args.resume:
         meta_path = Path(args.resume) / "run_meta.json"
@@ -356,6 +428,15 @@ def main(argv: list[str] | None = None) -> int:
     c.add_argument("--max-wait", type=float, default=12.0, help="with --wait: longest single wait in hours (default 12)")
     c.add_argument("--allow-sleep", action="store_true", help="let the computer idle-sleep during the run")
     c.set_defaults(fn=cmd_calibrate)
+
+    k = sub.add_parser("confirm", help="one pre-registered re-test of a finished run's held-out verdict, with more rollouts")
+    k.add_argument("run", metavar="RUN_DIR")
+    k.add_argument("--extra-k", type=int, default=8, help="new rollouts per held-out task and harness (default 8)")
+    k.add_argument("-y", "--yes", action="store_true")
+    k.add_argument("--wait", action="store_true", help="on a quota, throttle or network outage, wait and continue")
+    k.add_argument("--max-wait", type=float, default=12.0)
+    k.add_argument("--allow-sleep", action="store_true", help="let the computer idle-sleep")
+    k.set_defaults(fn=cmd_confirm)
 
     r = sub.add_parser("run", help="evolve the harness")
     r.add_argument("-c", "--config", default="lamarck.json")
