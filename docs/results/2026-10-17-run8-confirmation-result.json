@@ -1,0 +1,37 @@
+{
+  "best": "n0005",
+  "tasks": 10,
+  "k_total": 12,
+  "seed_mean": 0.4916666666666666,
+  "best_mean": 0.4166666666666667,
+  "seed_pass": 0.49166666666666664,
+  "best_pass": 0.4166666666666667,
+  "delta_pts": -7.49999999999999,
+  "noise_pts": 5.438953491833418,
+  "ship": false,
+  "reason": "held-out -7.5 pts does not clear noise 5.4 pts",
+  "plan": {
+    "run": "examples\\real-repo\\runs\\run-8-roomy",
+    "best": "n0005",
+    "heldout_tasks": [
+      "git-f89d7a3331",
+      "git-f51a53bfd2",
+      "git-52cfcfedc3",
+      "git-c30678d19e",
+      "git-2f23599bfb",
+      "git-adeda34bd1",
+      "git-d992be0de9",
+      "git-93c1cf8484",
+      "git-958990e22c",
+      "git-37ae0d6dd5"
+    ],
+    "k_done": 4,
+    "extra_k": 8,
+    "seeds": [
+      10004,
+      10011
+    ],
+    "rule": "pool the run's 4 held-out rollouts per task with 8 new ones (new seeds) for the seed and best harnesses; SHIP only if the held-out gain exceeds noise_mult (1.0) x the combined bootstrap noise band. One look only.",
+    "registered": "2026-10-17 13:58"
+  }
+}
