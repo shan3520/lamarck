@@ -55,6 +55,30 @@ Runs the seed harness on every task in the config's task file and keeps only **l
 
 Calibration uses its own seeds, and its rollouts are never reused by `run`. Tasks are *selected* on these outcomes, so reusing them would flatter every later candidate (regression to the mean). It is resumable: after a pause, rerun the same command.
 
+### `lamarck compare --base A --candidate B`
+A/B test of two versions of the agent's instructions on the config's verified tasks. Each version is a single file (e.g. `CLAUDE.md`) or a harness directory (`system.md`, `rules.md`, `skills/`). Both run on the same tasks with the same number of attempts and the same seeds (30000 and up, disjoint from `run`, `calibrate` and `confirm`).
+
+**Verdict:**
+- **BETTER** / **WORSE**: the score difference exceeds `gate.noise_mult` × the combined bootstrap noise band.
+- **NO CLEAR DIFFERENCE**: it doesn't.
+- **INCONCLUSIVE**: fewer than `gate.min_heldout_rollouts` attempts per version.
+
+The report also gives the noise band itself: the smallest difference this test could have detected.
+
+**Exit codes**, for CI: `0` better, `2` no clear difference or inconclusive, `3` worse, `4` paused.
+
+| Option | Default | Meaning |
+|---|---|---|
+| `-c, --config` | `lamarck.json` | Config: tasks and target |
+| `--base`, `--candidate` | required | Current and proposed instructions (file or directory) |
+| `-k` | 4 | Attempts per task and version |
+| `--split` | `all` | `all`, `train` or `heldout`. Use `heldout` if the candidate was tuned on the train tasks |
+| `--out` | `compares/<base>-vs-<candidate>` | Output directory: `compare_plan.json`, `trials.jsonl`, `compare.json`, `compare_report.md` |
+| `--workers` | `evolve.workers` | Parallel agent runs |
+| `-y`, `--wait`, `--max-wait`, `--allow-sleep` | | As for `run` |
+
+The plan is written before any attempt runs. Re-running the same command resumes from saved attempts. Running a *different* plan into the same `--out` is refused, so a test can't be quietly repeated until it passes.
+
 ### `lamarck confirm RUN_DIR`
 One **pre-registered** re-test of a finished run's held-out verdict, for when it lands inside the noise band. The seed and best harnesses get `--extra-k` more rollouts on the *same* held-out tasks, with seeds the run never used. These are pooled with the run's own held-out rollouts, and the run's gate is applied once.
 

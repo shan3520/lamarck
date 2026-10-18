@@ -4,6 +4,7 @@
     lamarck init DIR [--from CLAUDE.md]  scaffold a project (harness + config)
     lamarck mine-git --repo PATH         mine verified tasks from git history
     lamarck calibrate -c lamarck.json    keep only tasks the agent sometimes solves
+    lamarck compare --base A --candidate B   A/B test a change to the agent's instructions
     lamarck confirm RUN_DIR              one pre-registered re-test of a run's held-out verdict
     lamarck run -c lamarck.json          evolve the harness; writes a run directory
 """
@@ -228,6 +229,72 @@ def cmd_calibrate(args) -> int:
     return 0
 
 
+def cmd_compare(args) -> int:
+    """A/B test two versions of the agent's instructions on the config's verified tasks (see lamarck/compare.py)."""
+    from .chat_compat import retry_hint
+    from .compare import COMPARE_SEED, EXIT_CODES, compare_harnesses, load_instructions, render
+    from .evaluate import TrialCache
+
+    cfg_path, base_dir, conf, suite, _, _ = _load_project(args.config)
+    base, cand = load_instructions(args.base), load_instructions(args.candidate)
+    if base.fingerprint() == cand.fingerprint():
+        raise SystemExit("The base and candidate instructions are identical; nothing to compare.")
+    tasks = {"all": suite.tasks, "train": suite.train(), "heldout": suite.heldout()}[args.split]
+    if not tasks:
+        raise SystemExit(f"No tasks in split {args.split!r}.")
+    out = Path(args.out) if args.out else cfg_path.parent / "compares" / f"{base.fingerprint()}-vs-{cand.fingerprint()}"
+    out.mkdir(parents=True, exist_ok=True)
+    gate = _pick(GateConfig, conf.get("gate", {}))
+    plan = {
+        "base": str(args.base), "candidate": str(args.candidate),
+        "base_fingerprint": base.fingerprint(), "candidate_fingerprint": cand.fingerprint(),
+        "tasks": [t.id for t in tasks], "k": args.k, "seeds": [COMPARE_SEED, COMPARE_SEED + args.k - 1],
+        "rule": f"BETTER / WORSE only if the score difference exceeds noise_mult ({gate.noise_mult}) x the combined bootstrap noise band "
+                f"and each version has >= {gate.min_heldout_rollouts} attempts; otherwise NO CLEAR DIFFERENCE / INCONCLUSIVE.",
+        "registered": time.strftime("%Y-%m-%d %H:%M"),
+    }
+    plan_path = out / "compare_plan.json"
+    if plan_path.exists():
+        old = json.loads(plan_path.read_text(encoding="utf-8"))
+        keys = ("base_fingerprint", "candidate_fingerprint", "tasks", "k")
+        if any(old[k] != plan[k] for k in keys):
+            raise SystemExit(f"{out} already holds a different comparison plan; use a new --out. "
+                             "Changing the plan after seeing results would make the verdict meaningless.")
+        plan = old
+    else:
+        plan_path.write_text(json.dumps(plan, indent=2), encoding="utf-8")
+    n = 2 * len(tasks) * args.k
+    print(f"Comparing {args.candidate} against {args.base} on {len(tasks)} tasks x {args.k} attempts ({n} agent runs).")
+    print(f"Plan recorded before running: {plan_path}")
+    if not args.yes and input("This runs your agent. Continue? [y/N] ").strip().lower() not in ("y", "yes"):
+        print("Aborted (the plan stays recorded).")
+        return 1
+    _stay_awake(args)
+    target = build_target(conf["target"])
+    cache = TrialCache(out / "trials.jsonl")
+    workers = args.workers or conf.get("evolve", {}).get("workers", 3)
+    while True:
+        try:
+            r = compare_harnesses(target, base, cand, tasks, args.k, workers, cache, gate.noise_mult, gate.min_heldout_rollouts)
+            break
+        except Exception as exc:
+            if not is_fatal(exc):
+                raise
+            if not args.wait:
+                print(f"Paused: {describe_fatal(exc)}. Progress is saved; rerun the same command to continue.")
+                return 4
+            wait = min(retry_hint(str(exc)) or 300.0, args.max_wait * 3600)
+            print(f"Paused: {str(exc)[:300]}", flush=True)
+            print(f"Waiting {wait / 60:.0f} min, then continuing...", flush=True)
+            time.sleep(wait + 30)
+    (out / "compare.json").write_text(json.dumps({**r.to_dict(), "plan": plan}, indent=2), encoding="utf-8")
+    (out / "compare_report.md").write_text(render(r, str(args.base), str(args.candidate)), encoding="utf-8")
+    print(f"Score: {r.base_mean * 100:.1f}% -> {r.cand_mean * 100:.1f}%  ({r.delta_pts:+.1f} pts, noise {r.noise_pts:.1f} pts)")
+    print(f"Verdict: {r.verdict} ({r.reason})")
+    print(f"Report: {out / 'compare_report.md'}")
+    return EXIT_CODES[r.verdict]
+
+
 def cmd_confirm(args) -> int:
     """A single, pre-registered re-test of a finished run's held-out verdict (see lamarck/confirm.py)."""
     from .archive import Archive
@@ -428,6 +495,21 @@ def main(argv: list[str] | None = None) -> int:
     c.add_argument("--max-wait", type=float, default=12.0, help="with --wait: longest single wait in hours (default 12)")
     c.add_argument("--allow-sleep", action="store_true", help="let the computer idle-sleep during the run")
     c.set_defaults(fn=cmd_calibrate)
+
+    a = sub.add_parser("compare", help="A/B test a change to your agent's instructions (exit 0 better, 2 no clear difference, 3 worse)")
+    a.add_argument("-c", "--config", default="lamarck.json")
+    a.add_argument("--base", required=True, help="current instructions: a file such as CLAUDE.md, or a harness directory")
+    a.add_argument("--candidate", required=True, help="proposed instructions: a file or a harness directory")
+    a.add_argument("-k", type=int, default=4, help="attempts per task and version (default 4)")
+    a.add_argument("--split", choices=("all", "train", "heldout"), default="all",
+                   help="which tasks to use; use 'heldout' if the candidate was tuned on the train tasks")
+    a.add_argument("--out", help="output directory (default: compares/<base>-vs-<candidate> next to the config)")
+    a.add_argument("--workers", type=int)
+    a.add_argument("-y", "--yes", action="store_true")
+    a.add_argument("--wait", action="store_true", help="on a quota, throttle or network outage, wait and continue")
+    a.add_argument("--max-wait", type=float, default=12.0)
+    a.add_argument("--allow-sleep", action="store_true", help="let the computer idle-sleep")
+    a.set_defaults(fn=cmd_compare)
 
     k = sub.add_parser("confirm", help="one pre-registered re-test of a finished run's held-out verdict, with more rollouts")
     k.add_argument("run", metavar="RUN_DIR")

@@ -1,92 +1,43 @@
 # Lamarck
 
-**An automatic coach for AI coding agents: it improves the agent's instruction file and proves each improvement on tasks the agent never practised on.**
+**A/B tests for your AI coding agent's instructions.**
 
-Coding agents like Claude Code, Codex and Cursor read an instruction file before every task (`CLAUDE.md`, `AGENTS.md`, skill files). That file has a large effect on how well the agent works, and teams tune it by guesswork. Lamarck tunes it **with evidence**:
+Coding agents like Claude Code, Codex and Cursor read an instruction file before every task (`CLAUDE.md`, `AGENTS.md`, skill files). Teams edit that file all the time, by gut feeling. A new rule *sounds* helpful, so it ships.
 
-1. **Builds a practice exam from your git history.** Every past commit that made failing tests pass becomes a task, graded automatically by those tests.
-2. **Watches the agent take it** and groups its mistakes.
-3. **Has a second model propose a small, general fix** to the instruction file.
-4. **Keeps the fix only if the score rises and nothing that already worked breaks.**
-5. **Ships only if the improved file also wins on held-out tasks**, a slice of the exam the loop never sees.
-
-The model itself is never retrained. What the agent learns is written into its instructions and inherited by every future run, which is why the project is named after Lamarck, who argued that acquired traits are inherited.
+Lamarck tests the change instead. It runs your agent with the old and new instructions on **verified tasks from your own repository's history** and tells you whether the change helped, hurt, or made no difference you can measure:
 
 ```
-your git history ─► verified tasks (fail before the fix, pass after) ─► train / held-out split
-                                                                         │
-seed instructions ─► run agent ─► mine failures ─► propose small edit ─► critic ─► screen ─► confirm
-       ▲                                                                                       │
-       └──────────────── archive of variants · merge complementary specialists ◄───────────────┘
-                                                                                               │
-                              held-out gate: ship only if the gain clears the noise band ◄─────┘
-```
+lamarck compare --base CLAUDE.md --candidate CLAUDE.new.md
 
-> **Status: research prototype.** It works end to end on real models, with zero cost on free tiers. It is not yet proven on real teams' repositories; see [Results](#results) and [Limitations](#limitations).
+Score: 49.2% -> 41.7%  (-7.5 pts, noise 5.4 pts)
+Verdict: WORSE (-7.5 pts is below minus the noise band of 5.4 pts)
+```
+*(Numbers from a real re-test in our experiments: 10 never-seen tasks, 12 attempts per task and version.)*
+
+> **Status: research prototype.** The engine is complete and tested (130 tests). The measurements below come from free models on open-source repositories, not yet from customer pilots.
 
 ---
 
-## Contents
-- [Glossary](#glossary)
-- [Results](#results)
-- [Quick start (free)](#quick-start-free)
-- [Use it on your own repo](#use-it-on-your-own-repo)
-- [How a change earns its place](#how-a-change-earns-its-place)
-- [Long runs on free tiers: pause and resume](#long-runs-on-free-tiers-pause-and-resume)
-- [Model providers](#model-providers)
-- [Safety and integrity](#safety-and-integrity)
-- [Limitations](#limitations)
-- [Documentation map](#documentation-map)
-- [Development](#development)
+## Why test instruction changes
+In our own experiments on real repositories, **plausible, generic instruction changes often made the agent worse**. Small tests were also easy to fool:
 
-## Glossary
-| Term | Meaning |
-|---|---|
-| **Harness** | Everything around the frozen model that Lamarck may change: `system.md` (core instructions), `rules.md` (bullet rules), `skills/*.md` (reusable procedures). Rendered into one instruction file. |
-| **Target** | The agent being improved: a coding-agent CLI, Lamarck's built-in mini agent, or a single model call. |
-| **Proposer** | The model that reads failures and suggests harness edits. |
-| **Task** | A prompt plus a verifier (an automatic pass/fail check, such as a test command). |
-| **Rollout** | One attempt by the target at one task. |
-| **Train / held-out** | Train tasks drive the search. Held-out tasks are hidden from it and used once, to decide whether to ship. |
-| **Score** | Partial credit: the fraction of a task's checks passed. **Full-pass rate** is the strict number. |
+| Change (found by Lamarck's own search) | Looked like | Measured on tasks it wasn't tuned on |
+|---|---|---|
+| "Re-run the tests after every edit; finish only when they pass" | **+12.5 pts** | **−5.0 pts** |
+| "After any edit, run an import check; fix or revert on failure" | **+7.8 pts**, then +5.0 pts on 4 attempts per task | **−7.5 pts** on 12 attempts per task (pre-registered re-test) |
 
-## Results
-| Run | What it tested | Outcome | Write-up |
-|---|---|---|---|
-| Simulation (`lamarck demo`) | Every safeguard, deterministically | All safeguards behave as designed. Not evidence about real models. | `lamarck demo` |
-| Support conventions, free Groq models | Can the loop discover unstated house rules? | **SHIP**: held-out score 39.7% → 96.0%, full-pass 0/7 → 6/7, $0. On an easy benchmark I wrote. | [2026-10-02-groq-full.md](docs/results/2026-10-02-groq-full.md) |
-| Real repos (itsdangerous + python-slugify) | Does a real coding agent improve on real bug fixes? | **In progress** (run 2, multi-day, free). Run 1 was stopped on day 2 after the agent tried to search the whole disk; the agent was then hardened and the experiment restarted. | `examples/real-repo/` |
+The second change used up the agent's step budget on extra checks, so more attempts ran out of steps before finishing. Nobody would have caught that by reading the rule. The full story, including what went wrong in our own tooling, is in [docs/results/2026-10-08-real-repo.md](docs/results/2026-10-08-real-repo.md).
 
-Earlier smoke run and the bugs it surfaced: [2026-10-02-free-smoke.md](docs/results/2026-10-02-free-smoke.md).
+## How it works
+1. **Tasks from your git history** (`mine-git`). Every past commit that changed code *and* tests becomes a task: start from the commit's parent, make its tests pass. The commit message is the issue text.
+2. **Only real tasks** (`validate-tasks`). A task is kept only if its tests **fail before** the real fix and **pass after** it, the same check SWE-bench uses.
+3. **Only informative tasks** (`calibrate`). Your agent tries every task. Tasks it never solves or always solves score the same under any instructions, so they're dropped. In our runs, only 15–35% of real tasks were informative.
+4. **The A/B test** (`compare`). Both versions run on the same tasks, several attempts each. A difference counts only if it clears the **bootstrap noise band**, and the report states the smallest difference the test *could* have detected.
+5. **No re-rolling.** The plan (tasks, attempts, rule) is written to disk *before* anything runs. Re-running with a different plan into the same folder is refused, so a test can't be repeated until it happens to pass.
 
-## Quick start (free)
-Requires Python 3.10+ and git. Commands are shown for Windows (Git Bash or PowerShell); on macOS/Linux use `.venv/bin/` instead of `.venv/Scripts/`.
+Each run starts from a fresh snapshot of the repository at the task's base commit, **with no `.git` directory**, so the agent can't look up the real fix.
 
-**1. Install**
-```bash
-python -m venv .venv
-```
-```bash
-.venv/Scripts/python -m pip install -e ".[llm,dev]"
-```
-
-**2. See the whole loop for free, no API key**
-```bash
-.venv/Scripts/lamarck demo
-```
-The report is written to `runs/demo/report.md`.
-
-**3. Run it on real models for $0 with Groq's free tier.** Create a key at [console.groq.com/keys](https://console.groq.com/keys) and put it in a file named `.env` at the repo root (git-ignored):
-```
-GROQ_API_KEY=gsk_...
-```
-Then run:
-```bash
-.venv/Scripts/lamarck run -c examples/acme-support/lamarck.groq.json
-```
-This takes about 45 minutes and fits in one day's free quota. It has to discover 5 house conventions that the task prompts never state, and you get a report with a SHIP / DO NOT SHIP / INCONCLUSIVE verdict.
-
-## Use it on your own repo
+## Use it on your repo
 ```bash
 lamarck init .lamarck --from CLAUDE.md
 ```
@@ -94,90 +45,88 @@ lamarck init .lamarck --from CLAUDE.md
 lamarck mine-git --repo . --test-cmd "{python} -m pytest -q {tests}" --out .lamarck/tasks.mined.json
 ```
 ```bash
-lamarck validate-tasks .lamarck/tasks.mined.json --out .lamarck/tasks.json --heldout 0.4
+lamarck validate-tasks .lamarck/tasks.mined.json --out .lamarck/tasks.json
 ```
-Point the target at your agent in `.lamarck/lamarck.json`, using one of these:
+Point the target at your agent in `.lamarck/lamarck.json`:
 ```json
 "target": {"type": "command", "harness_file": "CLAUDE.md", "agent_cmd": "claude -p \"$(cat {prompt_file})\" --permission-mode acceptEdits"}
 ```
-```json
-"target": {"type": "command", "harness_file": "AGENT.md", "agent_cmd": "{python} -m lamarck.agents.mini --model qwen/qwen3.8-27b --prompt-file {prompt_file}"}
-```
-Then keep only the tasks your agent sometimes solves, and set `"tasks": "tasks.calibrated.json"` in the config:
+Keep only informative tasks, then set `"tasks": "tasks.calibrated.json"` in the config:
 ```bash
-lamarck calibrate -c .lamarck/lamarck.json
+lamarck calibrate -c .lamarck/lamarck.json --wait
+```
+Test a change:
+```bash
+lamarck compare -c .lamarck/lamarck.json --base CLAUDE.md --candidate CLAUDE.new.md --wait
+```
+The verdict and a per-task table are written to `compare_report.md`.
+
+**In CI**, the exit code is the verdict: `0` better, `2` no clear difference, `3` worse. You can block a pull request that makes the agent measurably worse.
+
+**How many attempts?** `-k 4` (the default) on 10–20 informative tasks detects differences of roughly 8–12 points. Smaller real effects need more tasks or attempts. The report says how small a difference your test could have caught, so "no clear difference" is never mistaken for "no difference".
+
+## Experimental: let Lamarck suggest changes
+`lamarck run` searches for instruction changes automatically. It mines the agent's failures, has a second model propose small general edits, and keeps only edits that survive staged testing and a final check on held-out tasks (DarwinX- and RRSI-style selection, see [docs/architecture.md](docs/architecture.md)). `lamarck confirm` re-tests a run's verdict once, with a plan registered in advance.
+
+**Honest status:** on a benchmark of unstated house conventions it improved held-out scores from 39.7% to 96.0% ([write-up](docs/results/2026-10-02-groq-full.md)). On real repositories with free models, **no suggested change has survived confirmation** (8 runs). The safeguards rejected every false improvement. Treat suggestions as hypotheses to test with `compare`, not as fixes.
+
+## What we learned building it
+- **Most real tasks are uninformative for a given agent.** With Nemotron-3-Super, 60 of 74 validated tasks were never solved and 3 were always solved, at first. Calibration is not optional.
+- **The agent's settings mattered more than its instructions.** Giving the same model 50 steps instead of 25, longer command output and more memory took it from 1 of 10 hard tasks to 9 of 9 (DeepSeek V4.1 Flash). That's a cue for a future `compare` of agent configurations, not just instruction files.
+- **Small samples lie.** 4 attempts per task said +5 points; 12 said −7.5.
+- **Long free-tier runs need plumbing.** Lamarck now waits out quotas, throttles and network drops, keeps the PC from idle-sleeping while it runs, and resumes after a shutdown without redoing finished work.
+
+## Quick start (free)
+Requires Python 3.10+ and git. Commands are shown for Windows; on macOS/Linux use `.venv/bin/` instead of `.venv/Scripts/`.
+```bash
+python -m venv .venv
 ```
 ```bash
-lamarck run -c .lamarck/lamarck.json
+.venv/Scripts/python -m pip install -e ".[llm,dev]"
 ```
-
-- **`mine-git`** turns every commit that changed both source and tests into a task: start from the commit's parent, add the commit's tests, make them pass. The commit message is the issue text.
-- **`validate-tasks`** keeps only tasks whose tests **fail before** the real fix and **pass after** it, the same check SWE-bench uses. In the itsdangerous repo, 11 of 20 mined tasks failed this check.
-- **`calibrate`** runs your agent on every task and drops **walls** (never solved) and already-solved tasks. Evolution learns only from tasks the agent *sometimes* solves. Without this step, our first real-repo runs had almost only walls, so no edit could show a gain.
-- The **mini agent** (`lamarck.agents.mini`) is a small, token-frugal, bash-only coding agent that runs on free Groq models. Its instruction file `AGENT.md` is the harness Lamarck evolves.
-- A complete worked example is in [`examples/real-repo/`](examples/real-repo/). Run `examples/real-repo/setup.sh` to clone its repos.
-
-## How a change earns its place
-| Stage | Rule | Source |
-|---|---|---|
-| **Critic** (free, before any rollout) | Rejects edits that mention a task id or a literal unique to one task (memorization); limits edit size, edits per proposal (annealed over time) and which files may be edited | RRSI critic; *Bad Genius* |
-| **Screen** (few rollouts) | Net gain > 0; no more than δ loss on tasks the parent reliably solved; added tokens must be paid for by gain | DarwinX preserve-and-extend; RRSI cost rule |
-| **Confirm** (more rollouts) | Gain must exceed the bootstrap noise band. Only confirmed variants may steer the search | DarwinX two-speed promotion; RRSI noise floor |
-| **Merge** | Variants that solve different tasks are combined; the child is kept only if it keeps both parents' wins | DarwinX recombination |
-| **Held-out gate** | The best variant ships only if its held-out gain clears held-out noise. Fewer than 20 held-out rollouts → **INCONCLUSIVE**, never SHIP | Every paper's overfitting lesson |
-
-Each run writes `report.md`, which contains the verdict, the train vs held-out gap, every accepted edit with its rationale, and the full harness diff. Details: [docs/architecture.md](docs/architecture.md).
-
-## Long runs on free tiers: pause and resume
-Free tiers cap tokens per day: Groq allows about 200K tokens per model per day, and a coding-agent attempt costs about 15–20K. Lamarck saves **every finished rollout and every proposal** in the run directory. When a daily quota runs out, the run **pauses** with exit code 4 and prints the resume command:
+See the whole engine work offline, no API key needed:
 ```bash
-lamarck run --resume examples/real-repo/runs/run-1 --yes
+.venv/Scripts/lamarck demo
 ```
-Resuming replays the search from disk at zero cost and continues exactly where it stopped. A test checks that a paused-and-resumed run ends identical to an uninterrupted one.
-
-Groq's per-day limit is a **rolling 24-hour window**: tokens free up as usage from a day ago ages out, and Groq says how long to wait ("try again in 2m51s"). With `--wait`, one launch waits through quota limits and runs to completion over several days on its own, with no daily resumes:
-```bash
-lamarck run --resume examples/real-repo/runs/run-2 --yes --wait
-```
+A complete real-repository example (task pool, calibrated tasks, configs for free providers) is in [`examples/real-repo/`](examples/real-repo/). Run `examples/real-repo/setup.sh` to clone its repositories.
 
 ## Model providers
-| Provider | Set in `.env` | Notes |
-|---|---|---|
-| **Groq** (free tier) | `GROQ_API_KEY` | Recommended free route. Set `"provider": "groq"` on an `llm` target or proposer. Per-minute limits are waited out automatically; daily limits pause the run. |
-| **Anthropic** | `ANTHROPIC_API_KEY` (or `ant auth login`) | The default (`claude-opus-5-5`). The proposer gets server-side refusal fallbacks; the target never does, because a silent model swap would invalidate the measurement. |
-| **OpenRouter** | `OPENROUTER_API_KEY` | Routed through OpenRouter's Anthropic-compatible endpoint. `:free` models allow 50 requests/day (1,000/day after a one-time $10 credit purchase). |
+Keys go in a git-ignored `.env` file, never in configs or chat.
 
-Free providers may log prompts. Don't send private code to free tiers. Full config reference: [docs/reference.md](docs/reference.md).
+| Provider | Key in `.env` | Notes |
+|---|---|---|
+| Anthropic | `ANTHROPIC_API_KEY` | The agent under test never gets model fallbacks: a silent model swap would invalidate the measurement. |
+| Groq, Gemini, NVIDIA, Mistral, Token Harbor | `GROQ_API_KEY`, `GEMINI_API_KEY`, `NVIDIA_API_KEY`, `MISTRAL_API_KEY`, `TOKENHARBOR_API_KEY` | OpenAI-compatible; free tiers work, with daily or per-minute limits that Lamarck waits out (`--wait`). |
+| OpenRouter | `OPENROUTER_API_KEY` | Anthropic-compatible endpoint. |
+
+Free tiers may log prompts. Don't send private code to them.
 
 ## Safety and integrity
-- **No peeking at the answer:** each rollout runs in a fresh **snapshot** of the repo at the task's base commit, with **no `.git` directory**, so the agent cannot look up the fixing commit. A test checks this.
-- **The built-in agent stays inside the repo.** Commands that reach outside it (`find /`, `~`, drive paths, `../..`) are blocked before they run, and a timed-out command's whole process tree is stopped. This was added after a real run, where the agent tried to search the whole disk.
-- **Agents still run real commands.** The guard is a heuristic, not a sandbox: use a sandboxed machine or container for repositories you don't trust, and for third-party agents like Claude Code.
-- **Secrets** live only in `.env`, which is git-ignored. Keys are never written to configs, logs or reports.
-- **Spend:** `run` asks before calling paid models, and `max_total_tokens` / `max_rollouts` cap a run.
+- **No peeking at the answer:** fresh repository snapshots with no `.git`. Lamarck's built-in agent also blocks commands that reach outside the task folder. Third-party agents need their own sandbox settings: OpenCode, for example, read the original repository on disk until it was configured to deny outside folders.
+- **Technical failures are not task failures.** Quota limits, network outages and provider hangs pause the run or are recorded as infrastructure errors; they're never scored as the agent failing.
+- **Pre-registration:** `compare` and `confirm` record their plan before running and refuse to change it.
+- **Secrets** stay in `.env` (git-ignored) and never reach logs or reports.
 
 ## Limitations
-- **Not yet proven on real teams' repositories.** The real-repo run is the first test of that.
-- **The support benchmark is easier than real work**: its failure messages name the broken rule.
-- **Memorization risk:** older commits in popular libraries may already be known to the model. Recent commits (e.g. python-slugify, Sept 2026) avoid this.
-- **Small samples:** verdicts rest on tens of rollouts. The noise band and the 20-rollout minimum guard against over-claiming, but they don't replace larger studies.
-- **Harness bloat:** accepted rules can be redundant. A pruning step is planned.
+- **No customer pilots yet.** Every number above comes from free models on open-source Python libraries.
+- **Python test suites only, so far.** Mining and validation assume a test command that names test files.
+- **Cost and time:** an A/B test on 15 tasks × 4 attempts × 2 versions is 120 agent runs. That's minutes to hours with a paid API, and days on free tiers.
+- **Memorization:** popular libraries' older commits may already be known to the model. Prefer recent commits.
 
 ## Documentation map
 | Document | What's in it |
 |---|---|
-| [docs/reference.md](docs/reference.md) | Every CLI command and option, every `lamarck.json` setting with defaults, run outputs, exit codes |
-| [docs/architecture.md](docs/architecture.md) | How the engine works, module by module, plus the design decisions and why |
-| [docs/research/brief.md](docs/research/brief.md) | The research survey this is built on: 5 papers, agreements, disagreements, GitHub check |
-| [docs/research/thesis.md](docs/research/thesis.md) | Product thesis, competition, kill criteria |
-| [docs/results/](docs/results/) | Write-ups of every real run, including failures and caveats |
+| [docs/reference.md](docs/reference.md) | Every command and option, config settings, outputs, exit codes |
+| [docs/architecture.md](docs/architecture.md) | How the engine works and why |
+| [docs/results/](docs/results/) | Every real run, including failures, caveats and pre-registered plans |
+| [docs/research/](docs/research/) | The research survey and product thesis this started from |
 | [NOTICE.md](NOTICE.md) | Credits for the research methods (clean-room implementation) |
 
 ## Development
 ```bash
 .venv/Scripts/python -m pytest -q
 ```
-77 tests, all offline. Tests never see real credentials or `.env`; a fixture isolates them. The simulated world in `src/lamarck/sim.py` exercises the full loop deterministically.
+130 tests, all offline. Tests never see real credentials or `.env`. The simulated world in `src/lamarck/sim.py` exercises the engine deterministically.
 
 ## License
 Proprietary. All rights reserved. See [LICENSE](LICENSE). Research credits are in [NOTICE.md](NOTICE.md).

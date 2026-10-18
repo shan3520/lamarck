@@ -41,6 +41,10 @@ tasks ──► evaluate seed (avg@k) ──► archive root
 | `chat_compat.py` | Minimal OpenAI-compatible client (Groq): `retry-after` handling, daily-limit detection, removal of reasoning text. |
 | `llm.py`, `env.py` | Provider dispatch, model-id mapping, `.env` loading, rate limiting. |
 | `gitmine.py` | Mining tasks from git history and fail-to-pass validation. |
+| `compare.py` | A/B test of two instruction versions on the same tasks and seeds: verdict against the bootstrap noise band, per-task table, cost difference. The core of the product since the 2026-10-18 pivot. |
+| `calibrate.py` | Keeps only tasks the agent sometimes solves, with its own seeds (never reused, because tasks are selected on them). |
+| `confirm.py` | One pre-registered re-test of a finished run's held-out verdict. |
+| `awake.py`, `proc.py` | Keeps the PC from idle-sleeping during long runs; runs subprocesses with a timeout that stops the whole process tree. |
 | `report.py`, `cli.py` | Run reports and the command line. |
 | `sim.py` | A deterministic simulated world (capabilities, interference, cheats, bloat) for tests and the demo. |
 
