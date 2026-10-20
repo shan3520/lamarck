@@ -213,3 +213,28 @@ def test_network_budget_resets_after_each_recovered_outage(monkeypatch):
     monkeypatch.setattr(chat_compat.urllib.request, "urlopen", flaky)
     for _ in range(10):  # 10 outages x 15 s each = 150 s in total, far above the 20 s per-outage budget
         assert client._post("/x", {}) == {"ok": 1}
+
+
+def test_claude_code_api_errors_pause_instead_of_failing_the_task():
+    # a real nested run returned "Not logged in" (is_error, no HTTP status) and was scored as a task failure
+    import json as _json
+
+    from lamarck.targets.command import claude_code_result
+
+    ok = {"type": "result", "is_error": False, "result": "done", "terminal_reason": "completed",
+          "usage": {"input_tokens": 100, "output_tokens": 20, "cache_creation_input_tokens": 5, "cache_read_input_tokens": 1000}}
+    assert claude_code_result(_json.dumps(ok))["result"] == "done"
+    assert claude_code_result("some log line\n" + _json.dumps(ok)) is not None
+    assert claude_code_result("plain text agent output") is None
+
+
+def test_agent_env_drops_a_parent_claude_session_but_keeps_api_keys(monkeypatch):
+    from lamarck.targets.command import agent_env
+
+    monkeypatch.setenv("CLAUDECODE", "1")
+    monkeypatch.setenv("ANTHROPIC_AUTH_TOKEN", "parent-session-token")
+    monkeypatch.setenv("ANTHROPIC_BASE_URL", "http://parent")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "user-key")
+    env = agent_env()
+    assert "ANTHROPIC_AUTH_TOKEN" not in env and "ANTHROPIC_BASE_URL" not in env and "CLAUDECODE" not in env
+    assert env["ANTHROPIC_API_KEY"] == "user-key"

@@ -14,7 +14,7 @@ Verdict: WORSE (-7.5 pts is below minus the noise band of 5.4 pts)
 ```
 *(Numbers from a real re-test in our experiments: 10 never-seen tasks, 12 attempts per task and version.)*
 
-> **Status: research prototype.** The engine is complete and tested (133 tests). The measurements below come from free models on open-source repositories, not yet from customer pilots.
+> **Status: research prototype.** The engine is complete and tested (135 tests). The measurements below come from free models on open-source repositories, not yet from customer pilots.
 
 ---
 
@@ -49,8 +49,15 @@ lamarck validate-tasks .lamarck/tasks.mined.json --out .lamarck/tasks.json
 ```
 Point the target at your agent in `.lamarck/lamarck.json`:
 ```json
-"target": {"type": "command", "harness_file": "CLAUDE.md", "agent_cmd": "claude -p \"$(cat {prompt_file})\" --permission-mode acceptEdits"}
+"target": {"type": "command", "harness_file": "CLAUDE.md", "timeout": 1800,
+           "agent_cmd": "claude -p --model sonnet --output-format json --permission-mode acceptEdits --allowedTools Bash PowerShell --strict-mcp-config --no-session-persistence < {prompt_file}"}
 ```
+This works on Windows, macOS and Linux. Notes on the Claude Code target:
+- It uses your normal Claude Code login, so run `claude` once and log in first. Usage counts against your plan or API key.
+- Lamarck reads its token use from the JSON output. An API problem (not logged in, rate limit, outage) pauses the run; it's never scored as the agent failing.
+- `--no-session-persistence` keeps test runs out of your Claude Code history.
+- Your personal Claude Code settings and instructions still apply, equally to both versions in a comparison.
+- Claude Code's file tools stay inside the task folder, but shell commands are not sandboxed. Use a container for repositories you don't trust.
 Keep only informative tasks, then set `"tasks": "tasks.calibrated.json"` in the config:
 ```bash
 lamarck calibrate -c .lamarck/lamarck.json --wait
@@ -132,7 +139,7 @@ Free tiers may log prompts. Don't send private code to them.
 ```bash
 .venv/Scripts/python -m pytest -q
 ```
-133 tests, all offline. Tests never see real credentials or `.env`. The simulated world in `src/lamarck/sim.py` exercises the engine deterministically.
+135 tests, all offline. Tests never see real credentials or `.env`. The simulated world in `src/lamarck/sim.py` exercises the engine deterministically.
 
 ## License
 Proprietary. All rights reserved. See [LICENSE](LICENSE). Research credits are in [NOTICE.md](NOTICE.md).

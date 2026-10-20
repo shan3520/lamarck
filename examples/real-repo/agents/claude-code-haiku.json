@@ -1,0 +1,6 @@
+{
+  "type": "command",
+  "harness_file": "CLAUDE.md",
+  "timeout": 1800,
+  "agent_cmd": "claude -p --model haiku --output-format json --permission-mode acceptEdits --allowedTools Bash PowerShell --strict-mcp-config --no-session-persistence < {prompt_file}"
+}
