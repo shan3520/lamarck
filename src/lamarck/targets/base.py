@@ -19,6 +19,7 @@ class Trial:
     tokens: int = 0
     error: str | None = None  # infrastructure error (not the agent's fault)
     score: float | None = None  # partial credit in [0, 1]; defaults to 1.0 / 0.0
+    models: list[str] = field(default_factory=list)  # models that actually answered, when the agent reports them
 
     def __post_init__(self) -> None:
         if self.score is None:
@@ -27,7 +28,7 @@ class Trial:
     @classmethod
     def from_dict(cls, d: dict) -> "Trial":
         return cls(d["task_id"], d["passed"], d.get("output", ""), d.get("detail", ""), d.get("trace", ""),
-                   d.get("tokens", 0), d.get("error"), d.get("score"))
+                   d.get("tokens", 0), d.get("error"), d.get("score"), list(d.get("models", [])))
 
     def to_dict(self) -> dict:
         return {
@@ -39,6 +40,7 @@ class Trial:
             "trace": self.trace[-4000:],
             "tokens": self.tokens,
             "error": self.error,
+            "models": self.models,
         }
 
 

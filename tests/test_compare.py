@@ -96,3 +96,29 @@ def test_shared_cache_with_same_instructions_and_different_agents_is_rejected():
     cache = TrialCache()
     with pytest.raises(ValueError, match="separate caches"):
         compare_variants(SimulatedTarget(ceiling=0.4), h, SimulatedTarget(ceiling=0.9), h, demo_suite().tasks, 2, 1, cache, cache)
+
+
+def test_model_switch_inside_a_variant_makes_the_test_inconclusive():
+    # a gateway (OmniRoute) swapped models on rate limits; a verdict would measure the swap, not the change
+    from lamarck.targets.base import Trial
+
+    class Gateway(SimulatedTarget):
+        def run(self, harness, task, seed):
+            t = super().run(harness, task, seed)
+            t.models = ["model-a"] if seed % 2 == 0 else ["model-b"]  # falls back on every other attempt
+            return t
+
+    class Pinned(SimulatedTarget):
+        def run(self, harness, task, seed):
+            t = super().run(harness, task, seed)
+            t.models = ["main-model", "small-model"]  # two models per attempt is fine if it never changes
+            return t
+
+    tasks = demo_suite().tasks
+    base = Harness({SYSTEM: "You are a careful engineer.\n"})
+    helpful = Harness({SYSTEM: "You are a careful engineer.\n", "skills/all.md": "\n".join(fix for _, fix in CATALOG.values())})
+    swapped = compare_harnesses(Gateway(), base, helpful, tasks, k=4, workers=1)
+    assert swapped.verdict == INCONCLUSIVE and "changed between attempts" in swapped.reason
+    pinned = compare_harnesses(Pinned(), base, helpful, tasks, k=4, workers=1)
+    assert pinned.verdict == BETTER and pinned.base_models == ["main-model", "small-model"]
+    assert Trial.from_dict(Trial("t", True, models=["m"]).to_dict()).models == ["m"]

@@ -46,6 +46,8 @@ class CompareResult:
     cand_tokens: float
     infra_errors: int
     rows: list[TaskRow] = field(default_factory=list)
+    base_models: list[str] = field(default_factory=list)  # models that answered, when the agent reports them
+    cand_models: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -67,6 +69,11 @@ def decide(base_mean: float, cand_mean: float, noise: float, n_rollouts: int, mi
     return UNCLEAR, f"{delta * 100:+.1f} pts is inside the noise band of {noise * 100:.1f} pts"
 
 
+def model_sets(res: EvalResult) -> set[tuple[str, ...]]:
+    """Distinct sets of models seen across a variant's attempts (attempts that don't report models are skipped)."""
+    return {tuple(t.models) for ts in res.trials.values() for t in ts if t.models}
+
+
 def compare_harnesses(target: Target, base: Harness, cand: Harness, tasks: list[Task], k: int = 4, workers: int = 3,
                       cache: TrialCache | None = None, noise_mult: float = 1.0, min_rollouts: int = 20) -> CompareResult:
     """Same agent, two versions of its instructions."""
@@ -86,10 +93,18 @@ def compare_variants(base_target: Target, base: Harness, cand_target: Target, ca
     c = evaluate(cand_target, cand, tasks, k, seed=COMPARE_SEED, workers=workers, cache=cand_cache)
     noise = noise_mult * math.sqrt(noise_band(b) ** 2 + noise_band(c) ** 2)
     verdict, reason = decide(b.mean, c.mean, noise, len(tasks) * k, min_rollouts)
+    # A gateway (e.g. OmniRoute) can silently switch models when one is rate-limited. If the models behind a
+    # variant changed between attempts, the test no longer measures the change you made: refuse a verdict.
+    for name, res in (("base", b), ("candidate", c)):
+        sets = model_sets(res)
+        if len(sets) > 1:
+            verdict, reason = INCONCLUSIVE, (f"the models answering the {name} changed between attempts "
+                                             f"({'; '.join(', '.join(s) for s in sorted(sets))}): a gateway fallback? Pin one model and re-test")
     rows = [TaskRow(t.id, sum(x.passed and x.error is None for x in b.trials[t.id]), sum(x.passed and x.error is None for x in c.trials[t.id]), k)
             for t in tasks]
     return CompareResult(verdict, reason, len(tasks), k, b.mean, c.mean, b.pass_rate, c.pass_rate, (c.mean - b.mean) * 100,
-                         noise * 100, _tokens(b), _tokens(c), b.infra_errors + c.infra_errors, rows)
+                         noise * 100, _tokens(b), _tokens(c), b.infra_errors + c.infra_errors, rows,
+                         sorted({m for s in model_sets(b) for m in s}), sorted({m for s in model_sets(c) for m in s}))
 
 
 def render(r: CompareResult, base_name: str, cand_name: str, settings: dict | None = None) -> str:
@@ -117,6 +132,8 @@ def render(r: CompareResult, base_name: str, cand_name: str, settings: dict | No
         f"**Verdict: {r.verdict}.** {r.reason[0].upper() + r.reason[1:]}.",
         f"With this many tasks and attempts, differences smaller than about **{r.noise_pts:.1f} pts** can't be told apart from luck.",
     ]
+    if r.base_models or r.cand_models:
+        lines.append(f"Models that answered: base {', '.join(r.base_models) or 'not reported'}; candidate {', '.join(r.cand_models) or 'not reported'}.")
     if r.infra_errors:
         lines.append(f"{r.infra_errors} attempts failed for technical reasons and count as failures.")
     lines += ["", "## Per task", "", "| Task | Base | Candidate |", "|---|---|---|"]

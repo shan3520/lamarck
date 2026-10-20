@@ -14,7 +14,7 @@ Verdict: WORSE (-7.5 pts is below minus the noise band of 5.4 pts)
 ```
 *(Numbers from a real re-test in our experiments: 10 never-seen tasks, 12 attempts per task and version.)*
 
-> **Status: research prototype.** The engine is complete and tested (135 tests). The measurements below come from free models on open-source repositories, not yet from customer pilots.
+> **Status: research prototype.** The engine is complete and tested (136 tests). The measurements below come from free models on open-source repositories, not yet from customer pilots.
 
 ---
 
@@ -57,6 +57,7 @@ This works on Windows, macOS and Linux. Notes on the Claude Code target:
 - Lamarck reads its token use from the JSON output. An API problem (not logged in, rate limit, outage) pauses the run; it's never scored as the agent failing.
 - `--no-session-persistence` keeps test runs out of your Claude Code history.
 - Your personal Claude Code settings and instructions still apply, equally to both versions in a comparison.
+- **Gateways such as OmniRoute:** Lamarck records which model answered each attempt. If the models behind one side change during a test, for example because a gateway fell back to another model on a rate limit, the verdict is **INCONCLUSIVE**. Pin one model, with fallback off, for testing.
 - Claude Code's file tools stay inside the task folder, but shell commands are not sandboxed. Use a container for repositories you don't trust.
 Keep only informative tasks, then set `"tasks": "tasks.calibrated.json"` in the config:
 ```bash
@@ -139,7 +140,7 @@ Free tiers may log prompts. Don't send private code to them.
 ```bash
 .venv/Scripts/python -m pytest -q
 ```
-135 tests, all offline. Tests never see real credentials or `.env`. The simulated world in `src/lamarck/sim.py` exercises the engine deterministically.
+136 tests, all offline. Tests never see real credentials or `.env`. The simulated world in `src/lamarck/sim.py` exercises the engine deterministically.
 
 ## License
 Proprietary. All rights reserved. See [LICENSE](LICENSE). Research credits are in [NOTICE.md](NOTICE.md).

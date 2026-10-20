@@ -131,6 +131,7 @@ class CommandTarget:
                              error="agent timed out before the model replied once")
             found = _TOKENS.findall(out)
             tokens = int(found[-1]) if found else 0
+            models: list[str] = []
             cc = claude_code_result(out)
             if cc is not None:
                 # e.g. 401 bad login, "Not logged in" (no status, terminal_reason api_error), 429, 529 overloaded:
@@ -139,8 +140,9 @@ class CommandTarget:
                     raise FatalRunError(f"Claude Code API error {cc.get('api_error_status') or ''}: {str(cc.get('result'))[:200]}")
                 u = cc.get("usage") or {}
                 tokens = sum(int(u.get(k) or 0) for k in ("input_tokens", "output_tokens", "cache_creation_input_tokens", "cache_read_input_tokens"))
+                models = sorted((cc.get("modelUsage") or {}).keys())  # what really answered (a gateway may swap models)
             v = verify(task, out, workdir=wd)
             trace = f"AGENT OUTPUT (tail):\n{out[-3000:]}\n\nAGENT STDERR (tail):\n{err[-1000:]}\n\nVERIFIER: {v.detail or 'PASS'}"
-            return Trial(task.id, v.passed, output=out[-4000:], detail=v.detail, trace=trace, tokens=tokens, score=v.score)
+            return Trial(task.id, v.passed, output=out[-4000:], detail=v.detail, trace=trace, tokens=tokens, score=v.score, models=models)
         finally:
             shutil.rmtree(tmp, ignore_errors=True)

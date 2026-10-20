@@ -65,7 +65,7 @@ Anything not given defaults to the config's harness and target. Both variants ru
 **Verdict:**
 - **BETTER** / **WORSE**: the score difference exceeds `gate.noise_mult` × the combined bootstrap noise band.
 - **NO CLEAR DIFFERENCE**: it doesn't.
-- **INCONCLUSIVE**: fewer than `gate.min_heldout_rollouts` attempts per version.
+- **INCONCLUSIVE**: fewer than `gate.min_heldout_rollouts` attempts per version, or the models answering one side changed between attempts. Lamarck reads which models answered from agents that report them, such as Claude Code's JSON output. A gateway falling back to another model would otherwise be measured as an effect of your change.
 
 The report also gives the noise band itself: the smallest difference this test could have detected.
 
