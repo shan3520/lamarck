@@ -1,0 +1,43 @@
+{
+  "base": "harness",
+  "candidate": "harness",
+  "base_fingerprint": "1442b1034d76",
+  "candidate_fingerprint": "1442b1034d76",
+  "base_agent": {
+    "type": "command",
+    "harness_file": "AGENT.md",
+    "timeout": 2400,
+    "agent_cmd": "{python} -m lamarck.agents.mini --provider nvidia --model nvidia/nemotron-3-super-120b-a12b --prompt-file {prompt_file} --max-steps 25 --max-tokens-total 80000 --rpm 9"
+  },
+  "candidate_agent": {
+    "type": "command",
+    "harness_file": "AGENT.md",
+    "timeout": 7200,
+    "agent_cmd": "{python} -m lamarck.agents.mini --provider nvidia --model nvidia/nemotron-3-super-120b-a12b --prompt-file {prompt_file} --max-steps 50 --keep 8 --obs-chars 4000 --max-tokens-total 400000 --rpm 9"
+  },
+  "tasks": [
+    "git-71b46b06fb",
+    "git-def2dabea8",
+    "git-6c58e969a5",
+    "git-670b715b30",
+    "git-5bd5c263f9",
+    "git-edb9970d02",
+    "git-5e6ae76a61",
+    "git-a16e9c1c9b",
+    "git-f51a53bfd2",
+    "git-6887a7bd5a",
+    "git-0e6acdf9b6",
+    "git-f89d7a3331",
+    "git-fb33cf2c24",
+    "git-2f23599bfb",
+    "git-619ab9ce9a",
+    "git-069b30002a"
+  ],
+  "k": 4,
+  "seeds": [
+    30000,
+    30003
+  ],
+  "rule": "BETTER / WORSE only if the score difference exceeds noise_mult (1.0) x the combined bootstrap noise band and each version has >= 20 attempts; otherwise NO CLEAR DIFFERENCE / INCONCLUSIVE.",
+  "registered": "2026-10-20 10:04"
+}

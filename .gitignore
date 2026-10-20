@@ -10,3 +10,4 @@ runs/
 *.console.log
 examples/real-repo/repos/
 *.trials.jsonl
+trials-*.jsonl
