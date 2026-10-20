@@ -14,7 +14,7 @@ Verdict: WORSE (-7.5 pts is below minus the noise band of 5.4 pts)
 ```
 *(Numbers from a real re-test in our experiments: 10 never-seen tasks, 12 attempts per task and version.)*
 
-> **Status: research prototype.** The engine is complete and tested (136 tests). The measurements below come from free models on open-source repositories, not yet from customer pilots.
+> **Status: research prototype.** The engine is complete and tested (138 tests). The measurements below come from free models on open-source repositories, not yet from customer pilots.
 
 ---
 
@@ -27,6 +27,15 @@ In our own experiments on real repositories, **plausible, generic instruction ch
 | "After any edit, run an import check; fix or revert on failure" | **+7.8 pts**, then +5.0 pts on 4 attempts per task | **−7.5 pts** on 12 attempts per task (pre-registered re-test) |
 
 The second change used up the agent's step budget on extra checks, so more attempts ran out of steps before finishing. Nobody would have caught that by reading the rule. The full story, including what went wrong in our own tooling, is in [docs/results/2026-10-08-real-repo.md](docs/results/2026-10-08-real-repo.md).
+
+The agent's **settings** told a different story. A pre-registered `compare` of the same model and instructions, with a bigger step budget, more memory and more command output, on 16 randomly chosen real tasks:
+
+| | Default settings | Roomy settings |
+|---|---|---|
+| Tasks fully solved | 28.1% | **68.8%** (+40.6 pts, noise ±4.7 pts) → **BETTER** |
+| Tokens per attempt | 45k | 135k (+201%); per *solved* task +23% |
+
+That's a large, real effect, with a cost you can weigh. [Write-up](docs/results/2026-10-21-showcase-agent-settings.md) · [report](docs/results/2026-10-21-showcase2-compare-report.md).
 
 ## How it works
 1. **Tasks from your git history** (`mine-git`). Every past commit that changed code *and* tests becomes a task: start from the commit's parent, make its tests pass. The commit message is the issue text.
@@ -86,7 +95,7 @@ The same works for a model migration: point `--candidate-agent` at a spec that u
 
 ## What we learned building it
 - **Most real tasks are uninformative for a given agent.** With Nemotron-3-Super, 60 of 74 validated tasks were never solved and 3 were always solved, at first. Calibration is not optional.
-- **The agent's settings mattered more than its instructions.** Giving the same model 50 steps instead of 25, longer command output and more memory took it from 1 of 10 hard tasks to 9 of 9 (DeepSeek V4.1 Flash). That's why `compare` tests agent settings and models too.
+- **The agent's settings mattered more than its instructions.** Giving the same model 50 steps instead of 25, longer command output and more memory took it from 1 of 10 hard tasks to 9 of 9 (DeepSeek V4.1 Flash), and a pre-registered `compare` with Nemotron-3-Ultra measured 28% → 69%. That's why `compare` tests agent settings and models too.
 - **Small samples lie.** 4 attempts per task said +5 points; 12 said −7.5.
 - **Long free-tier runs need plumbing.** Lamarck now waits out quotas, throttles and network drops, keeps the PC from idle-sleeping while it runs, and resumes after a shutdown without redoing finished work.
 
@@ -140,7 +149,7 @@ Free tiers may log prompts. Don't send private code to them.
 ```bash
 .venv/Scripts/python -m pytest -q
 ```
-136 tests, all offline. Tests never see real credentials or `.env`. The simulated world in `src/lamarck/sim.py` exercises the engine deterministically.
+138 tests, all offline. Tests never see real credentials or `.env`. The simulated world in `src/lamarck/sim.py` exercises the engine deterministically.
 
 ## License
 Proprietary. All rights reserved. See [LICENSE](LICENSE). Research credits are in [NOTICE.md](NOTICE.md).

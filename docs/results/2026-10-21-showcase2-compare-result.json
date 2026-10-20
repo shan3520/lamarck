@@ -1,0 +1,158 @@
+{
+  "verdict": "BETTER",
+  "reason": "+40.6 pts clears the noise band of 4.7 pts",
+  "tasks": 16,
+  "k": 4,
+  "base_mean": 0.28125,
+  "cand_mean": 0.6875,
+  "base_pass": 0.28125,
+  "cand_pass": 0.6875,
+  "delta_pts": 40.625,
+  "noise_pts": 4.701768566520175,
+  "base_tokens": 44754.75,
+  "cand_tokens": 134560.125,
+  "infra_errors": 0,
+  "rows": [
+    {
+      "task_id": "git-71b46b06fb",
+      "base_passes": 3,
+      "cand_passes": 2,
+      "k": 4
+    },
+    {
+      "task_id": "git-def2dabea8",
+      "base_passes": 2,
+      "cand_passes": 4,
+      "k": 4
+    },
+    {
+      "task_id": "git-6c58e969a5",
+      "base_passes": 0,
+      "cand_passes": 2,
+      "k": 4
+    },
+    {
+      "task_id": "git-670b715b30",
+      "base_passes": 0,
+      "cand_passes": 0,
+      "k": 4
+    },
+    {
+      "task_id": "git-5bd5c263f9",
+      "base_passes": 0,
+      "cand_passes": 0,
+      "k": 4
+    },
+    {
+      "task_id": "git-edb9970d02",
+      "base_passes": 1,
+      "cand_passes": 4,
+      "k": 4
+    },
+    {
+      "task_id": "git-5e6ae76a61",
+      "base_passes": 3,
+      "cand_passes": 4,
+      "k": 4
+    },
+    {
+      "task_id": "git-a16e9c1c9b",
+      "base_passes": 0,
+      "cand_passes": 4,
+      "k": 4
+    },
+    {
+      "task_id": "git-f51a53bfd2",
+      "base_passes": 1,
+      "cand_passes": 4,
+      "k": 4
+    },
+    {
+      "task_id": "git-6887a7bd5a",
+      "base_passes": 0,
+      "cand_passes": 0,
+      "k": 4
+    },
+    {
+      "task_id": "git-0e6acdf9b6",
+      "base_passes": 2,
+      "cand_passes": 4,
+      "k": 4
+    },
+    {
+      "task_id": "git-f89d7a3331",
+      "base_passes": 0,
+      "cand_passes": 4,
+      "k": 4
+    },
+    {
+      "task_id": "git-fb33cf2c24",
+      "base_passes": 0,
+      "cand_passes": 1,
+      "k": 4
+    },
+    {
+      "task_id": "git-2f23599bfb",
+      "base_passes": 2,
+      "cand_passes": 4,
+      "k": 4
+    },
+    {
+      "task_id": "git-619ab9ce9a",
+      "base_passes": 4,
+      "cand_passes": 3,
+      "k": 4
+    },
+    {
+      "task_id": "git-069b30002a",
+      "base_passes": 0,
+      "cand_passes": 4,
+      "k": 4
+    }
+  ],
+  "base_models": [],
+  "cand_models": [],
+  "plan": {
+    "base": "harness",
+    "candidate": "harness",
+    "base_fingerprint": "1442b1034d76",
+    "candidate_fingerprint": "1442b1034d76",
+    "base_agent": {
+      "type": "command",
+      "harness_file": "AGENT.md",
+      "timeout": 2400,
+      "agent_cmd": "{python} -m lamarck.agents.mini --provider nvidia --model nvidia/nemotron-3-ultra-550b-a55b --prompt-file {prompt_file} --max-steps 25 --max-tokens-total 80000 --rpm 9"
+    },
+    "candidate_agent": {
+      "type": "command",
+      "harness_file": "AGENT.md",
+      "timeout": 7200,
+      "agent_cmd": "{python} -m lamarck.agents.mini --provider nvidia --model nvidia/nemotron-3-ultra-550b-a55b --prompt-file {prompt_file} --max-steps 50 --keep 8 --obs-chars 4000 --max-tokens-total 400000 --rpm 9"
+    },
+    "tasks": [
+      "git-71b46b06fb",
+      "git-def2dabea8",
+      "git-6c58e969a5",
+      "git-670b715b30",
+      "git-5bd5c263f9",
+      "git-edb9970d02",
+      "git-5e6ae76a61",
+      "git-a16e9c1c9b",
+      "git-f51a53bfd2",
+      "git-6887a7bd5a",
+      "git-0e6acdf9b6",
+      "git-f89d7a3331",
+      "git-fb33cf2c24",
+      "git-2f23599bfb",
+      "git-619ab9ce9a",
+      "git-069b30002a"
+    ],
+    "k": 4,
+    "seeds": [
+      30000,
+      30003
+    ],
+    "rule": "BETTER / WORSE only if the score difference exceeds noise_mult (1.0) x the combined bootstrap noise band and each version has >= 20 attempts; otherwise NO CLEAR DIFFERENCE / INCONCLUSIVE.",
+    "registered": "2026-10-20 13:54"
+  }
+}
