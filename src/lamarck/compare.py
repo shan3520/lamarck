@@ -69,8 +69,21 @@ def decide(base_mean: float, cand_mean: float, noise: float, n_rollouts: int, mi
 
 def compare_harnesses(target: Target, base: Harness, cand: Harness, tasks: list[Task], k: int = 4, workers: int = 3,
                       cache: TrialCache | None = None, noise_mult: float = 1.0, min_rollouts: int = 20) -> CompareResult:
-    b = evaluate(target, base, tasks, k, seed=COMPARE_SEED, workers=workers, cache=cache)
-    c = evaluate(target, cand, tasks, k, seed=COMPARE_SEED, workers=workers, cache=cache)
+    """Same agent, two versions of its instructions."""
+    return compare_variants(target, base, target, cand, tasks, k, workers, cache, cache, noise_mult, min_rollouts)
+
+
+def compare_variants(base_target: Target, base: Harness, cand_target: Target, cand: Harness, tasks: list[Task], k: int = 4,
+                     workers: int = 3, base_cache: TrialCache | None = None, cand_cache: TrialCache | None = None,
+                     noise_mult: float = 1.0, min_rollouts: int = 20) -> CompareResult:
+    """Two agent variants: they may differ in instructions, agent settings (steps, memory, timeout) or model.
+
+    Saved attempts are keyed by the instructions' fingerprint only, so variants that share instructions
+    but differ in settings MUST use separate caches, or the candidate would replay the base's results."""
+    if base_cache is not None and base_cache is cand_cache and base_target is not cand_target and base.fingerprint() == cand.fingerprint():
+        raise ValueError("variants with the same instructions but different agents need separate caches")
+    b = evaluate(base_target, base, tasks, k, seed=COMPARE_SEED, workers=workers, cache=base_cache)
+    c = evaluate(cand_target, cand, tasks, k, seed=COMPARE_SEED, workers=workers, cache=cand_cache)
     noise = noise_mult * math.sqrt(noise_band(b) ** 2 + noise_band(c) ** 2)
     verdict, reason = decide(b.mean, c.mean, noise, len(tasks) * k, min_rollouts)
     rows = [TaskRow(t.id, sum(x.passed and x.error is None for x in b.trials[t.id]), sum(x.passed and x.error is None for x in c.trials[t.id]), k)
@@ -79,13 +92,22 @@ def compare_harnesses(target: Target, base: Harness, cand: Harness, tasks: list[
                          noise * 100, _tokens(b), _tokens(c), b.infra_errors + c.infra_errors, rows)
 
 
-def render(r: CompareResult, base_name: str, cand_name: str) -> str:
+def render(r: CompareResult, base_name: str, cand_name: str, settings: dict | None = None) -> str:
+    """`settings`: {"what changed": [(label, base value, candidate value), ...]} for the report's header table."""
     tok = f"{(r.cand_tokens / r.base_tokens - 1) * 100:+.0f}%" if r.base_tokens else "n/a"
+    changed = [label for label, b, c in (settings or {}).get("rows", []) if b != c]
+    what = " and ".join(changed) if changed else "instructions"
     lines = [
-        f"# Instruction change test: {r.verdict}",
+        f"# Agent change test ({what}): {r.verdict}",
         "",
         f"**{cand_name}** vs **{base_name}** on {r.tasks} verified tasks, {r.k} attempts each per version.",
         "",
+    ]
+    if settings and settings.get("rows"):
+        lines += ["| Setting | Base | Candidate |", "|---|---|---|"]
+        lines += [f"| {label}{' (changed)' if b != c else ''} | `{b}` | `{c}` |" for label, b, c in settings["rows"]]
+        lines.append("")
+    lines += [
         "| | Base | Candidate |",
         "|---|---|---|",
         f"| Mean score | {r.base_mean * 100:.1f}% | {r.cand_mean * 100:.1f}% |",
@@ -100,6 +122,27 @@ def render(r: CompareResult, base_name: str, cand_name: str) -> str:
     lines += ["", "## Per task", "", "| Task | Base | Candidate |", "|---|---|---|"]
     lines += [f"| {row.task_id} | {row.base_passes}/{row.k} | {row.cand_passes}/{row.k} |" for row in r.rows]
     return "\n".join(lines) + "\n"
+
+
+def load_target_spec(path) -> dict:
+    """An agent variant: a JSON file holding a target spec, or a whole lamarck.json (its "target" is used)."""
+    import json
+    from pathlib import Path
+
+    data = json.loads(Path(path).read_text(encoding="utf-8"))
+    spec = data.get("target", data) if isinstance(data, dict) else None
+    if not isinstance(spec, dict) or "type" not in spec:
+        raise ValueError(f"{path}: expected a target spec with a 'type' (or a lamarck.json with a 'target')")
+    return spec
+
+
+def settings_rows(base_label: str, base: Harness, cand_label: str, cand: Harness, base_spec: dict, cand_spec: dict) -> dict:
+    b = f"{base_label} ({base.fingerprint()})"
+    c = b if cand.fingerprint() == base.fingerprint() else f"{cand_label} ({cand.fingerprint()})"  # same content = unchanged
+    rows = [("instructions", b, c)]
+    for key in sorted(set(base_spec) | set(cand_spec)):
+        rows.append((f"agent {key}", str(base_spec.get(key, "")), str(cand_spec.get(key, ""))))
+    return {"rows": rows}
 
 
 def load_instructions(path) -> Harness:

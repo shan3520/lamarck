@@ -52,8 +52,47 @@ def test_compare_cli_end_to_end_and_plan_cannot_change(tmp_path):
             "--candidate", str(tmp_path / "CLAUDE.new.md"), "--out", str(out), "-y", "--allow-sleep"]
     assert main(args) == 0  # BETTER
     report = (out / "compare_report.md").read_text(encoding="utf-8")
-    assert report.startswith("# Instruction change test: BETTER") and "| Task | Base | Candidate |" in report
+    assert report.startswith("# Agent change test (instructions): BETTER") and "| Task | Base | Candidate |" in report
     assert json.loads((out / "compare.json").read_text(encoding="utf-8"))["verdict"] == BETTER
     assert main(args) == 0  # same plan: replayed from saved attempts
     with pytest.raises(SystemExit, match="different comparison plan"):
         main(args + ["-k", "2"])
+
+
+def test_compare_agent_settings_with_the_same_instructions(tmp_path):
+    # e.g. more steps or another model: same CLAUDE.md, different agent. Shared instructions must not
+    # make the candidate replay the base's saved attempts (they're keyed by instructions only).
+    demo_suite().save(tmp_path / "tasks.json")
+    (tmp_path / "lamarck.json").write_text(json.dumps({"tasks": "tasks.json", "target": {"type": "simulated", "ceiling": 0.45},
+                                                       "evolve": {"workers": 1}}), encoding="utf-8")
+    (tmp_path / "harness").mkdir()
+    (tmp_path / "harness" / "system.md").write_text("You are a careful engineer.\n" + "\n".join(f for _, f in CATALOG.values()), encoding="utf-8")
+    (tmp_path / "stronger.json").write_text(json.dumps({"type": "simulated", "ceiling": 0.95}), encoding="utf-8")
+    out = tmp_path / "cmp"
+    code = main(["compare", "-c", str(tmp_path / "lamarck.json"), "--candidate-agent", str(tmp_path / "stronger.json"),
+                 "--out", str(out), "-y", "--allow-sleep"])
+    result = json.loads((out / "compare.json").read_text(encoding="utf-8"))
+    assert code == 0 and result["verdict"] == BETTER and result["cand_mean"] > result["base_mean"]
+    report = (out / "compare_report.md").read_text(encoding="utf-8")
+    assert report.startswith("# Agent change test (agent ceiling): BETTER")
+    assert "| agent ceiling (changed) | `0.45` | `0.95` |" in report
+    assert (out / "trials-base.jsonl").exists() and (out / "trials-candidate.jsonl").exists()
+
+
+def test_identical_variants_are_refused(tmp_path):
+    demo_suite().save(tmp_path / "tasks.json")
+    (tmp_path / "lamarck.json").write_text(json.dumps({"tasks": "tasks.json", "target": {"type": "simulated"}}), encoding="utf-8")
+    (tmp_path / "harness").mkdir()
+    (tmp_path / "harness" / "system.md").write_text("hi\n", encoding="utf-8")
+    with pytest.raises(SystemExit, match="identical"):
+        main(["compare", "-c", str(tmp_path / "lamarck.json"), "-y", "--allow-sleep"])
+
+
+def test_shared_cache_with_same_instructions_and_different_agents_is_rejected():
+    h = Harness({SYSTEM: "hi\n"})
+    from lamarck.compare import compare_variants
+    from lamarck.evaluate import TrialCache
+
+    cache = TrialCache()
+    with pytest.raises(ValueError, match="separate caches"):
+        compare_variants(SimulatedTarget(ceiling=0.4), h, SimulatedTarget(ceiling=0.9), h, demo_suite().tasks, 2, 1, cache, cache)

@@ -55,8 +55,12 @@ Runs the seed harness on every task in the config's task file and keeps only **l
 
 Calibration uses its own seeds, and its rollouts are never reused by `run`. Tasks are *selected* on these outcomes, so reusing them would flatter every later candidate (regression to the mean). It is resumable: after a pause, rerun the same command.
 
-### `lamarck compare --base A --candidate B`
-A/B test of two versions of the agent's instructions on the config's verified tasks. Each version is a single file (e.g. `CLAUDE.md`) or a harness directory (`system.md`, `rules.md`, `skills/`). Both run on the same tasks with the same number of attempts and the same seeds (30000 and up, disjoint from `run`, `calibrate` and `confirm`).
+### `lamarck compare`
+A/B test of two **agent variants** on the config's verified tasks. The variants may differ in:
+- **instructions** (`--base` / `--candidate`): a single file such as `CLAUDE.md`, or a harness directory (`system.md`, `rules.md`, `skills/`);
+- **agent settings or model** (`--base-agent` / `--candidate-agent`): a JSON target spec, such as a different step budget, memory, timeout or model. A whole `lamarck.json` also works; its `target` is used.
+
+Anything not given defaults to the config's harness and target. Both variants run on the same tasks with the same number of attempts and the same seeds (30000 and up, disjoint from `run`, `calibrate` and `confirm`). Each variant's attempts are saved separately (`trials-base.jsonl`, `trials-candidate.jsonl`): saved attempts are keyed by instructions, so variants that share instructions would otherwise collide.
 
 **Verdict:**
 - **BETTER** / **WORSE**: the score difference exceeds `gate.noise_mult` × the combined bootstrap noise band.
@@ -70,10 +74,11 @@ The report also gives the noise band itself: the smallest difference this test c
 | Option | Default | Meaning |
 |---|---|---|
 | `-c, --config` | `lamarck.json` | Config: tasks and target |
-| `--base`, `--candidate` | required | Current and proposed instructions (file or directory) |
+| `--base`, `--candidate` | the config's harness | Current and proposed instructions (file or directory) |
+| `--base-agent`, `--candidate-agent` | the config's target | Current and proposed agent settings: a JSON target spec or a `lamarck.json` |
 | `-k` | 4 | Attempts per task and version |
 | `--split` | `all` | `all`, `train` or `heldout`. Use `heldout` if the candidate was tuned on the train tasks |
-| `--out` | `compares/<base>-vs-<candidate>` | Output directory: `compare_plan.json`, `trials.jsonl`, `compare.json`, `compare_report.md` |
+| `--out` | `compares/<base id>-vs-<candidate id>` | Output directory: `compare_plan.json`, `trials-base.jsonl`, `trials-candidate.jsonl`, `compare.json`, `compare_report.md` |
 | `--workers` | `evolve.workers` | Parallel agent runs |
 | `-y`, `--wait`, `--max-wait`, `--allow-sleep` | | As for `run` |
 

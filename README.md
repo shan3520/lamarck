@@ -1,6 +1,6 @@
 # Lamarck
 
-**A/B tests for your AI coding agent's instructions.**
+**A/B tests for your AI coding agent: its instructions, its settings and its model.**
 
 Coding agents like Claude Code, Codex and Cursor read an instruction file before every task (`CLAUDE.md`, `AGENTS.md`, skill files). Teams edit that file all the time, by gut feeling. A new rule *sounds* helpful, so it ships.
 
@@ -14,7 +14,7 @@ Verdict: WORSE (-7.5 pts is below minus the noise band of 5.4 pts)
 ```
 *(Numbers from a real re-test in our experiments: 10 never-seen tasks, 12 attempts per task and version.)*
 
-> **Status: research prototype.** The engine is complete and tested (130 tests). The measurements below come from free models on open-source repositories, not yet from customer pilots.
+> **Status: research prototype.** The engine is complete and tested (133 tests). The measurements below come from free models on open-source repositories, not yet from customer pilots.
 
 ---
 
@@ -61,6 +61,12 @@ lamarck compare -c .lamarck/lamarck.json --base CLAUDE.md --candidate CLAUDE.new
 ```
 The verdict and a per-task table are written to `compare_report.md`.
 
+**Test agent settings or a new model, not just instructions.** In our experiments, the agent's settings (step budget, memory, how much command output it sees) mattered more than its instruction file. Give each variant as a JSON agent spec:
+```bash
+lamarck compare -c .lamarck/lamarck.json --base-agent agents/current.json --candidate-agent agents/more-steps.json --wait
+```
+The same works for a model migration: point `--candidate-agent` at a spec that uses the new model. The report shows exactly which settings changed. Ready-made examples are in [`examples/real-repo/agents/`](examples/real-repo/agents/).
+
 **In CI**, the exit code is the verdict: `0` better, `2` no clear difference, `3` worse. You can block a pull request that makes the agent measurably worse.
 
 **How many attempts?** `-k 4` (the default) on 10–20 informative tasks detects differences of roughly 8–12 points. Smaller real effects need more tasks or attempts. The report says how small a difference your test could have caught, so "no clear difference" is never mistaken for "no difference".
@@ -72,7 +78,7 @@ The verdict and a per-task table are written to `compare_report.md`.
 
 ## What we learned building it
 - **Most real tasks are uninformative for a given agent.** With Nemotron-3-Super, 60 of 74 validated tasks were never solved and 3 were always solved, at first. Calibration is not optional.
-- **The agent's settings mattered more than its instructions.** Giving the same model 50 steps instead of 25, longer command output and more memory took it from 1 of 10 hard tasks to 9 of 9 (DeepSeek V4.1 Flash). That's a cue for a future `compare` of agent configurations, not just instruction files.
+- **The agent's settings mattered more than its instructions.** Giving the same model 50 steps instead of 25, longer command output and more memory took it from 1 of 10 hard tasks to 9 of 9 (DeepSeek V4.1 Flash). That's why `compare` tests agent settings and models too.
 - **Small samples lie.** 4 attempts per task said +5 points; 12 said −7.5.
 - **Long free-tier runs need plumbing.** Lamarck now waits out quotas, throttles and network drops, keeps the PC from idle-sleeping while it runs, and resumes after a shutdown without redoing finished work.
 
@@ -126,7 +132,7 @@ Free tiers may log prompts. Don't send private code to them.
 ```bash
 .venv/Scripts/python -m pytest -q
 ```
-130 tests, all offline. Tests never see real credentials or `.env`. The simulated world in `src/lamarck/sim.py` exercises the engine deterministically.
+133 tests, all offline. Tests never see real credentials or `.env`. The simulated world in `src/lamarck/sim.py` exercises the engine deterministically.
 
 ## License
 Proprietary. All rights reserved. See [LICENSE](LICENSE). Research credits are in [NOTICE.md](NOTICE.md).
