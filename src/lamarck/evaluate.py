@@ -25,7 +25,8 @@ class FatalRunError(RuntimeError):
     """An error no amount of retrying fixes (out of credits, bad credentials). Aborts the run."""
 
 
-FATAL_STATUS = {401: "authentication failed (check the API key)", 402: "out of credits / payment required", 403: "permission denied for this model or key"}
+FATAL_STATUS = {401: "authentication failed (check the API key)", 402: "out of credits / payment required", 403: "permission denied for this model or key",
+                404: "model not found for this key (removed or renamed by the provider?)"}  # NVIDIA dropped a model mid-test
 
 
 def _daily_quota_exhausted(exc: BaseException) -> bool:

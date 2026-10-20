@@ -82,7 +82,7 @@ def compare_harnesses(target: Target, base: Harness, cand: Harness, tasks: list[
 
 def compare_variants(base_target: Target, base: Harness, cand_target: Target, cand: Harness, tasks: list[Task], k: int = 4,
                      workers: int = 3, base_cache: TrialCache | None = None, cand_cache: TrialCache | None = None,
-                     noise_mult: float = 1.0, min_rollouts: int = 20) -> CompareResult:
+                     noise_mult: float = 1.0, min_rollouts: int = 20, max_infra_frac: float = 0.1) -> CompareResult:
     """Two agent variants: they may differ in instructions, agent settings (steps, memory, timeout) or model.
 
     Saved attempts are keyed by the instructions' fingerprint only, so variants that share instructions
@@ -95,6 +95,13 @@ def compare_variants(base_target: Target, base: Harness, cand_target: Target, ca
     verdict, reason = decide(b.mean, c.mean, noise, len(tasks) * k, min_rollouts)
     # A gateway (e.g. OmniRoute) can silently switch models when one is rate-limited. If the models behind a
     # variant changed between attempts, the test no longer measures the change you made: refuse a verdict.
+    # Technical failures (crashes, a model the provider removed mid-test) count as failures in the score. If
+    # they're common, the score measures the outage, not the change: a showcase run once read WORSE because
+    # 60 of 64 candidate attempts hit a provider 404.
+    n = len(tasks) * k
+    if max(b.infra_errors, c.infra_errors) > max_infra_frac * n:
+        verdict, reason = INCONCLUSIVE, (f"too many technical failures (base {b.infra_errors}/{n}, candidate {c.infra_errors}/{n}); "
+                                         "fix the cause and re-test")
     for name, res in (("base", b), ("candidate", c)):
         sets = model_sets(res)
         if len(sets) > 1:

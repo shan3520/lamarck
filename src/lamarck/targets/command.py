@@ -120,7 +120,7 @@ class CommandTarget:
             res = _proc.run(cmd, shell=True, cwd=wd, timeout=self.timeout, env=agent_env())
             out, err, code = res.stdout, res.stderr + ("\nagent timed out" if res.timed_out else ""), res.returncode
             if code == QUOTA_EXIT_CODE:
-                raise FatalRunError("model provider unavailable inside the agent (exit 75; quota or network): " + " ".join(err.split())[-400:])
+                raise FatalRunError("model provider unavailable inside the agent (exit 75): " + " ".join(err.split())[-400:])
             if code == AGENT_CRASH_EXIT_CODE:  # a bug in the agent program, not the model failing the task
                 return Trial(task.id, False, detail="FAIL: infrastructure error (agent crashed)", trace=err[-2000:],
                              error="agent crashed: " + " ".join(err.split())[-300:])

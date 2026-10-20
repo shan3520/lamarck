@@ -122,3 +122,34 @@ def test_model_switch_inside_a_variant_makes_the_test_inconclusive():
     pinned = compare_harnesses(Pinned(), base, helpful, tasks, k=4, workers=1)
     assert pinned.verdict == BETTER and pinned.base_models == ["main-model", "small-model"]
     assert Trial.from_dict(Trial("t", True, models=["m"]).to_dict()).models == ["m"]
+
+
+def test_many_technical_failures_make_the_test_inconclusive():
+    # a showcase run read WORSE because the provider removed the candidate's model mid-test (60/64 attempts crashed)
+    from lamarck.targets.base import Trial
+
+    class Outage(SimulatedTarget):
+        def run(self, harness, task, seed):
+            if "skills/all.md" in harness.components:
+                return Trial(task.id, False, error="agent crashed: HTTP 404 model not found")
+            return super().run(harness, task, seed)
+
+    tasks = demo_suite().tasks
+    base = Harness({SYSTEM: "You are a careful engineer.\n"})
+    cand = Harness({SYSTEM: "You are a careful engineer.\n", "skills/all.md": "x"})
+    r = compare_harnesses(Outage(), base, cand, tasks, k=2, workers=1)
+    assert r.verdict == INCONCLUSIVE and "technical failures" in r.reason
+
+
+def test_wait_only_for_problems_that_pass(monkeypatch):
+    import argparse
+
+    from lamarck.cli import _wait_for
+
+    args = argparse.Namespace(wait=True, max_wait=12.0)
+    assert _wait_for(RuntimeError("HTTP 429: rate limit still exceeded after retries"), args) == 300.0
+    assert _wait_for(RuntimeError("network error: getaddrinfo failed"), args) == 300.0
+    assert _wait_for(RuntimeError("Please try again in 2m30s"), args) == 150.0
+    assert _wait_for(RuntimeError("model provider unavailable inside the agent (exit 75): HTTP 404: Not Found"), args) is None
+    assert _wait_for(RuntimeError("Claude Code API error : Not logged in"), args) is None
+    assert _wait_for(RuntimeError("HTTP 429: rate limit"), argparse.Namespace(wait=False, max_wait=12.0)) is None

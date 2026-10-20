@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 import time
 from dataclasses import fields
@@ -171,6 +172,24 @@ def _load_project(config: str):
     return cfg_path, base, conf, suite, harness, via
 
 
+def _wait_for(exc: BaseException, args) -> float | None:
+    """Seconds to wait before retrying a paused command, or None if waiting can't help (bad key or login,
+    a model the provider removed): those pause with an explanation instead of waiting forever."""
+    if not getattr(args, "wait", False):
+        return None
+    from .chat_compat import retry_hint
+
+    text = str(exc)
+    if re.search(r"HTTP (401|402|403|404)\b|authenticat|not logged in|not found for", text, re.IGNORECASE):
+        return None
+    hint = retry_hint(text)
+    if hint is not None:
+        return min(hint, args.max_wait * 3600)
+    if re.search(r"network|rate limit|quota|per-day|HTTP 429|HTTP 5\d\d|overloaded", text, re.IGNORECASE):
+        return min(300.0, args.max_wait * 3600)
+    return None
+
+
 def _stay_awake(args) -> None:
     """Long runs stalled for hours when the PC idle-slept (frozen agents, network drops on wake)."""
     if not getattr(args, "allow_sleep", False):
@@ -199,7 +218,6 @@ def cmd_calibrate(args) -> int:
         print("Aborted.")
         return 1
     workers = args.workers or conf.get("evolve", {}).get("workers", 3)
-    from .chat_compat import retry_hint
 
     while True:
         try:
@@ -209,11 +227,10 @@ def cmd_calibrate(args) -> int:
             if not is_fatal(exc):
                 raise
             # an overnight network outage paused a calibration for 7 h; with --wait it checks back instead
-            wait = (retry_hint(str(exc)) or 300.0) if args.wait else None
+            wait = _wait_for(exc, args)
             if wait is None:
-                print(f"\nPaused: {describe_fatal(exc)}. {len(cache)} rollouts are saved; rerun the same command to continue.")
+                print(f"\nPaused: {describe_fatal(exc)}. {len(cache)} rollouts are saved; fix the cause, then rerun the same command to continue.")
                 return 4
-            wait = min(wait, args.max_wait * 3600)
             print(f"\nPaused: {str(exc)[:300]}\nWaiting {wait / 60:.0f} min ({len(cache)} rollouts saved), then continuing...", flush=True)
             time.sleep(wait + 30)
     print(table(cals))
@@ -231,7 +248,6 @@ def cmd_calibrate(args) -> int:
 
 def cmd_compare(args) -> int:
     """A/B test two agent variants on the config's verified tasks: different instructions, agent settings or models."""
-    from .chat_compat import retry_hint
     import hashlib
 
     from .compare import COMPARE_SEED, EXIT_CODES, compare_variants, load_instructions, load_target_spec, render, settings_rows
@@ -296,10 +312,10 @@ def cmd_compare(args) -> int:
         except Exception as exc:
             if not is_fatal(exc):
                 raise
-            if not args.wait:
-                print(f"Paused: {describe_fatal(exc)}. Progress is saved; rerun the same command to continue.")
+            wait = _wait_for(exc, args)
+            if wait is None:
+                print(f"Paused: {describe_fatal(exc)}. Progress is saved; fix the cause, then rerun the same command to continue.")
                 return 4
-            wait = min(retry_hint(str(exc)) or 300.0, args.max_wait * 3600)
             print(f"Paused: {str(exc)[:300]}", flush=True)
             print(f"Waiting {wait / 60:.0f} min, then continuing...", flush=True)
             time.sleep(wait + 30)
@@ -314,7 +330,6 @@ def cmd_compare(args) -> int:
 def cmd_confirm(args) -> int:
     """A single, pre-registered re-test of a finished run's held-out verdict (see lamarck/confirm.py)."""
     from .archive import Archive
-    from .chat_compat import retry_hint
     from .confirm import HELDOUT_SEED, as_dict, confirm
     from .evaluate import TrialCache
 
@@ -365,12 +380,12 @@ def cmd_confirm(args) -> int:
             c = confirm(target, archive, summary["best"], suite.heldout(), k_done, args.extra_k, gate, cache, workers)
             break
         except Exception as exc:
-            if not is_fatal(exc) or not args.wait:
-                if is_fatal(exc):
-                    print(f"\nPaused: {describe_fatal(exc)}. Progress is saved; rerun the same command to continue.")
-                    return 4
+            if not is_fatal(exc):
                 raise
-            wait = min(retry_hint(str(exc)) or 300.0, args.max_wait * 3600)
+            wait = _wait_for(exc, args)
+            if wait is None:
+                print(f"\nPaused: {describe_fatal(exc)}. Progress is saved; fix the cause, then rerun the same command to continue.")
+                return 4
             print(f"\nPaused: {str(exc)[:300]}\nWaiting {wait / 60:.0f} min, then continuing...", flush=True)
             time.sleep(wait + 30)
     done_path.write_text(json.dumps({**as_dict(c), "plan": plan}, indent=2) + "\n", encoding="utf-8")
