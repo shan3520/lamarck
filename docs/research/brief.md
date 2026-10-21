@@ -129,7 +129,7 @@ Scored 1–5 on: proven gain · productization gap · solo-buildable · buyer pa
 | B. Generic self-improving layer for any production agent | 4 | 2 (RELAI raised $6.9M Jun 2026; LangSmith Engine) | 2 (needs per-customer verifiers, enterprise sales) | 4 | 3 | 15 |
 | C. Model-migration autopilot: re-tune the harness when switching to a cheaper model | 3 | 3 | 3 | 5 | 2 | 16 |
 
-**Winner: A.** C becomes a feature on the same engine. See [thesis.md](thesis.md).
+**Winner: A.** C becomes a feature on the same engine.
 
 ## Next question to ask (research #02)
 *"How do you build trustworthy evals from production traces when there's no ground truth?"* RHO, LLM-judge reliability, and verifier synthesis. This is the bottleneck every paper above names.

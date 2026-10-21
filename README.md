@@ -142,7 +142,7 @@ Free tiers may log prompts. Don't send private code to them.
 | [docs/reference.md](docs/reference.md) | Every command and option, config settings, outputs, exit codes |
 | [docs/architecture.md](docs/architecture.md) | How the engine works and why |
 | [docs/results/](docs/results/) | Every real run, including failures, caveats and pre-registered plans |
-| [docs/research/](docs/research/) | The research survey and product thesis this started from |
+| [docs/research/](docs/research/) | The research survey this started from |
 | [NOTICE.md](NOTICE.md) | Credits for the research methods (clean-room implementation) |
 
 ## Development
