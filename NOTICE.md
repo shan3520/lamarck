@@ -1,4 +1,11 @@
-# Notice: research this work builds on
+# Notice
+
+Lamarck
+Copyright 2026 shan3520 (GitHub)
+
+Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE).
+
+## Research this work builds on
 
 Lamarck is a clean-room implementation. No code was copied from the repositories below. The methods were implemented from the papers' descriptions.
 

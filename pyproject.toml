@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Evolve your coding agent's harness (CLAUDE.md, AGENTS.md, skills) against verified tasks, with held-out proof."
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "Proprietary" }
+license = { text = "Apache-2.0" }
 dependencies = []
 
 [project.optional-dependencies]

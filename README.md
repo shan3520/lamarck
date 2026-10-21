@@ -152,4 +152,4 @@ Free tiers may log prompts. Don't send private code to them.
 138 tests, all offline. Tests never see real credentials or `.env`. The simulated world in `src/lamarck/sim.py` exercises the engine deterministically.
 
 ## License
-Proprietary. All rights reserved. See [LICENSE](LICENSE). Research credits are in [NOTICE.md](NOTICE.md).
+[Apache License 2.0](LICENSE). You may use, modify and distribute Lamarck, including commercially, under its terms. Copyright and research credits are in [NOTICE.md](NOTICE.md).
